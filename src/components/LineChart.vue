@@ -27,7 +27,7 @@
 
 <script lang="ts">
 import { curveBumpX, curveLinear, curveMonotoneX, line } from "d3-shape";
-import { bisect, bisector, extent as blya, group } from "d3-array";
+import { bisect, bisector, extent as d3Extent, group } from "d3-array";
 import { axisLeft, axisBottom } from "d3-axis";
 import { scaleLinear, scaleTime } from "d3-scale";
 import { Component, Mixins } from "vue-property-decorator";
@@ -52,7 +52,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     xAxis: any = null;
     extent: any = [];
 
-    line = line()
+    line = line<any>()
         .x((d) => {
             return this.xScale(new Date(d.label));
         })
@@ -64,9 +64,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     setScales(): void {
         const lt = this.data.labels.map((d) => new Date(d));
 
-        console.log(blya(lt));
-
-        this.xScale.domain(blya(lt)).range([0, this.size.width]);
+        this.xScale.domain(d3Extent(lt) as any).range([0, this.size.width]);
 
         this.yScale
             .range([0, this.size.height])
@@ -212,7 +210,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .attr("stroke", "black")
             .attr("opacity", 0);
 
-        const bisect = bisector((d) => new Date(d.label));
+        const bisect = bisector((d: any) => new Date(d.label));
 
         this.svg.on("mousemove", (e) => {
             const pointerCoords = pointer(e);
