@@ -1,10 +1,10 @@
 <template>
     <div id="app">
-        <!-- ColumnChart
+        ColumnChart
         <ColumnChart :options="columnOptions" :data="data" />
         <hr />
         <hr />
-        <hr /> -->
+        <hr />
 
         LineChart
         <LineChart :options="columnOptions" :data="data" />
