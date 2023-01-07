@@ -32,7 +32,7 @@ export default class D3Chart extends Vue {
         top: 10,
         bottom: 30,
         left: 35,
-        right: 5,
+        right: 20,
     };
 
     get maxValueFromOptionsData(): number {
