@@ -26,16 +26,16 @@
 </template>
 
 <script lang="ts">
-import { curveBumpX, curveLinear, curveMonotoneX, line } from "d3-shape";
-import { bisect, bisector, extent as d3Extent, group } from "d3-array";
+import { curveMonotoneX, line } from "d3-shape";
+import { bisector, extent as d3Extent, group } from "d3-array";
 import { axisLeft, axisBottom } from "d3-axis";
 import { scaleLinear, scaleTime } from "d3-scale";
+import { zoom } from "d3-zoom";
+import { pointer } from "d3-selection";
+
 import { Component, Mixins } from "vue-property-decorator";
 import D3Chart from "../d3Chart";
 import formatNumber from "../logic/formatNumber";
-import { zoom } from "d3-zoom";
-import d3, { timeParse } from "d3";
-import { pointer } from "d3-selection";
 
 @Component
 export default class extends Mixins<D3Chart>(D3Chart) {
@@ -53,13 +53,10 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     extent: any = [];
 
     line = line<any>()
-        .x((d) => {
-            return this.xScale(new Date(d.label));
-        })
-        .y((d) => {
-            return this.yScale(d.value);
-        })
-        .curve(curveLinear);
+        .defined((d: any) => d.value !== null)
+        .x((d) => this.xScale(new Date(d.label)))
+        .y((d) => this.yScale(d.value))
+        .curve(curveMonotoneX);
 
     setScales(): void {
         const lt = this.data.labels.map((d) => new Date(d));
@@ -168,7 +165,22 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .data(this.chartData)
             .enter()
             .append("circle")
-            .attr("r", 2)
+            .attr("r", (d) => (d.value !== null ? 2 : 0))
+            .attr("cx", (d) => this.xScale(new Date(d.label)))
+            .attr("cy", (d) => this.yScale(d.value));
+    }
+
+    onResize(): void {
+        this.setSizes();
+        this.setSvgViewBox();
+        this.setScales();
+        this.setAxis();
+
+        this.svgGroup.selectAll(".path").attr("d", (d) => this.line(d.value));
+
+        this.svgGroup
+            .selectAll("circle")
+            .attr("r", (d) => (d.value !== null ? 2 : 0))
             .attr("cx", (d) => this.xScale(new Date(d.label)))
             .attr("cy", (d) => this.yScale(d.value));
     }
@@ -195,20 +207,16 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
         this.svg.call(this.zoom).on("wheel.zoom", null);
 
-        const groupes = Array.from(
-            group(this.chartData, (d) => d.name),
-            ([key, value]) => ({ key, value })
-        );
-
         const markerLine = this.svgGroup
             .append("line")
+            .attr("class", "line-chart__marker")
             .attr("x1", 0)
             .attr("x2", 0)
             .attr("y1", 0)
             .attr("y2", this.size.height + this.margins.top)
-            .attr("stroke-width", 3)
-            .attr("stroke", "black")
-            .attr("opacity", 0);
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", 7)
+            .attr("stroke", "black");
 
         const bisect = bisector((d: any) => new Date(d.label));
 
@@ -226,14 +234,18 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             markerLine.attr("x1", x).attr("x2", x).attr("opacity", 1);
         });
 
-        // window.addEventListener("resize", this.onResize);
+        window.addEventListener("resize", this.onResize);
     }
 }
 </script>
 
 <style lang="scss">
+.line-chart {
+    &__marker {
+        opacity: 0.2;
+    }
+}
 path {
     fill: none;
-    //     stroke: #ed3700;
 }
 </style>
