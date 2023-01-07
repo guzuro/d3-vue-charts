@@ -32,10 +32,11 @@ import { axisLeft, axisBottom } from "d3-axis";
 import { scaleLinear, scaleTime } from "d3-scale";
 import { zoom } from "d3-zoom";
 import { pointer } from "d3-selection";
-
+import dayjs from "dayjs";
 import { Component, Mixins } from "vue-property-decorator";
 import D3Chart from "../d3Chart";
 import formatNumber from "../logic/formatNumber";
+import { timeParse } from "d3";
 
 @Component
 export default class extends Mixins<D3Chart>(D3Chart) {
@@ -121,7 +122,9 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     setAxis(): void {
         const xAxisOption = this.options.xAxis;
         const yAxisOption = this.options.yAxis;
-        const lt = this.data.labels.map((d) => new Date(d));
+        const lt = this.data.labels
+            .map((d) => new Date(d))
+            .filter((d, i, arr) => (arr.length > 15 ? i % 2 === 0 : true));
 
         if (yAxisOption && yAxisOption.visible) {
             this.yAxis.call(
@@ -132,8 +135,22 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         if (xAxisOption && xAxisOption.visible) {
             this.xAxis
                 .attr("transform", `translate(0,${this.size.height})`)
-                .call(axisBottom(this.xScale).tickValues(lt));
+                .call(
+                    axisBottom(this.xScale)
+                        .tickValues(lt)
+                        .tickFormat(this.formatTick)
+                );
         }
+    }
+
+    formatTick(date: any): string {
+        const format = this.options.xAxis.format;
+
+        if (format) {
+            return dayjs(date).format(format);
+        }
+
+        return dayjs(date).format("D MMM");
     }
 
     setLines() {
@@ -165,9 +182,11 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .data(this.chartData)
             .enter()
             .append("circle")
-            .attr("r", (d) => (d.value !== null ? 2 : 0))
+            .attr("class", "chart_circle")
+            .attr("r", (d) => (d.value !== null ? 3 : 0))
             .attr("cx", (d) => this.xScale(new Date(d.label)))
-            .attr("cy", (d) => this.yScale(d.value));
+            .attr("cy", (d) => this.yScale(d.value))
+            .attr("fill", (d) => d.color);
     }
 
     onResize(): void {
