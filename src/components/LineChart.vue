@@ -271,14 +271,12 @@ export default class extends Mixins<D3Chart>(D3Chart) {
           .html(this.formatTick(nearestIndexData.label))
 
 
-      this.markerLine.attr("x1", x).attr("x2", x).attr("opacity", 1);
+      this.markerLine.style('opacity', 1).attr("x1", x).attr("x2", x).attr("opacity", 1);
   }
 
   onMouseleave(e: MouseEvent):void {
-    const n = select('.line-chart__marker-date');
-
-        n.style('opacity', 0)
-
+    this.markerDate!.style('opacity', 0)
+    this.markerLine.style('opacity', 0)
   }
 
     mounted(): void {
