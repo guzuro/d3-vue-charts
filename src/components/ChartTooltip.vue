@@ -55,6 +55,7 @@ export default class extends Vue {
 
 .list {
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
     &__item {
         flex: 1 0 33%;
