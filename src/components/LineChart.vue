@@ -5,9 +5,8 @@
             ref="lineChart"
             :style="{
                 height: `${containerHeight}px`,
-                            position: 'relative'
-
-                            }"
+                position: 'relative',
+            }"
         >
             <div
                 class="line-chart__tooltip"
@@ -18,12 +17,9 @@
             />
             <button @click="zoomIn">+</button>
             <button @click="zoomOut">-</button>
-<!--          <div class="line-chart__marker-date" />-->
+            <!--          <div class="line-chart__marker-date" />-->
         </div>
-         <chart-tooltip
-            v-if="options.legend"
-            :infos="selectedInfos"
-        />
+        <chart-tooltip v-if="options.legend" :infos="selectedInfos" />
     </div>
 </template>
 
@@ -35,25 +31,24 @@ import { scaleLinear, scaleTime } from "d3-scale";
 import { zoom } from "d3-zoom";
 import { pointer } from "d3-selection";
 import dayjs from "dayjs";
-import { Component, Emit, Mixins } from 'vue-property-decorator'
+import { Component, Emit, Mixins } from "vue-property-decorator";
 import D3Chart from "../d3Chart";
 import formatNumber from "../logic/formatNumber";
-import ChartTooltip from '@/components/ChartTooltip.vue'
-import { select } from 'd3'
+import ChartTooltip from "@/components/ChartTooltip.vue";
+import { select } from "d3";
 
 @Component({
     components: {
-        ChartTooltip
-    }
+        ChartTooltip,
+    },
 })
 export default class extends Mixins<D3Chart>(D3Chart) {
-
-    @Emit('onMove')
-    selectedLabel(data:Array<any>):Array<any> {
-        return data.map(d => ({
+    @Emit("onMove")
+    selectedLabel(data: Array<any>): Array<any> {
+        return data.map((d) => ({
             name: d.name,
             value: d.value,
-        }))
+        }));
     }
 
     xScale = scaleTime();
@@ -71,243 +66,253 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         .y((d) => this.yScale(d.value))
         .curve(curveMonotoneX);
 
-  selectedInfos:any[] = []
+    selectedInfos: any[] = [];
 
-  get bisect() {
-      return bisector((d: any) => new Date(d.label));
-  }
-
-  get markerLine():any {
-      return this.svgGroup
-          .append("line")
-          .attr("class", "line-chart__marker")
-          .attr("x1", 0)
-          .attr("x2", 0)
-          .attr("y1", 0)
-          .attr("y2", this.size.height + this.margins.top)
-          .attr("stroke-width", 1)
-          .attr("stroke-dasharray", 7)
-          .attr("stroke", "black");
-  }
-
-  get markerDate() {
-    if (this.chartRoot) {
-      return this.chartRoot
-          .append('div')
-          .attr('class', 'line-chart__marker-date')
-        .style('opacity', 0)
+    get bisect() {
+        return bisector((d: any) => new Date(d.label));
     }
 
-    return null
-  }
+    get markerLine(): any {
+        return this.svgGroup
+            .append("line")
+            .attr("class", "line-chart__marker")
+            .attr("x1", 0)
+            .attr("x2", 0)
+            .attr("y1", 0)
+            .attr("y2", this.size.height + this.margins.top)
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", 7)
+            .attr("stroke", "black");
+    }
 
-  // get markerDate():any {
-  //   return
-  // }
+    get markerDate() {
+        if (this.chartRoot) {
+            return this.chartRoot
+                .append("div")
+                .attr("class", "line-chart__marker-date")
+                .style("opacity", 0);
+        }
 
-  get zoom() {
-      if (this.options.chart.zoom) {
-          return zoom()
-              .scaleExtent([1, 8])
-              .translateExtent(this.extent)
-              .extent(this.extent)
-              .on("zoom", this.zoomed);
-      }
+        return null;
+    }
 
-      return null;
-  }
+    // get markerDate():any {
+    //   return
+    // }
 
-  get containerHeight(): number {
-      return this.options.chart.height;
-  }
+    get zoom() {
+        if (this.options.chart.zoom) {
+            return zoom()
+                .scaleExtent([1, 8])
+                .translateExtent(this.extent)
+                .extent(this.extent)
+                .on("zoom", this.zoomed);
+        }
 
-  setScales(): void {
-      const lt = this.data.labels.map((d) => new Date(d));
+        return null;
+    }
 
-      this.xScale.domain(d3Extent(lt) as any).range([0, this.size.width]);
+    get containerHeight(): number {
+        return this.options.chart.height;
+    }
 
-      this.yScale
-          .range([0, this.size.height])
-          .domain([this.maxValueFromOptionsData, 0]);
-  }
+    setScales(): void {
+        const lt = this.data.labels.map((d) => new Date(d));
 
-  zoomIn() {
-      if (this.zoom) {
-          this.svg.call(this.zoom.scaleBy, 1.5);
-      }
-  }
+        this.xScale.domain(d3Extent(lt) as any).range([0, this.size.width]);
 
-  zoomed(e: any): void {
-      this.xScale.range(
-          [0, this.size.width - this.margins.right].map((d) =>
-              e.transform.applyX(d)
-          )
-      );
+        this.yScale
+            .range([0, this.size.height])
+            .domain([this.maxValueFromOptionsData, 0]);
+    }
 
-      this.svg.select(".chart-axis-group-x").call(this.setAxis);
-      this.svgGroup.selectAll(".path").attr("d", (d) => this.line(d.value));
+    zoomIn() {
+        if (this.zoom) {
+            this.svg.call(this.zoom.scaleBy, 1.5);
+        }
+    }
 
-      this.svgGroup
-          .selectAll("circle")
-          .attr("cx", (d) => this.xScale(new Date(d.label)))
-          .attr("cy", (d) => this.yScale(d.value));
-  }
+    zoomed(e: any): void {
+        this.xScale.range(
+            [0, this.size.width - this.margins.right].map((d) =>
+                e.transform.applyX(d)
+            )
+        );
 
-  zoomOut() {
-      if (this.zoom) {
-          this.svg.call(this.zoom.scaleBy, 0.5);
-      }
-  }
+        this.svg.select(".chart-axis-group-x").call(this.setAxis);
+        this.svgGroup.selectAll(".path").attr("d", (d) => this.line(d.value));
 
-  setChartAxis(): void {
-      const axisGroup = this.svgGroup
-          .append("g")
-          .attr("class", "chart-axis-group");
+        this.svgGroup
+            .selectAll("circle")
+            .attr("cx", (d) => this.xScale(new Date(d.label)))
+            .attr("cy", (d) => this.yScale(d.value));
+    }
 
-      this.yAxis = axisGroup.append("g").attr("class", "chart-axis-group--y");
+    zoomOut() {
+        if (this.zoom) {
+            this.svg.call(this.zoom.scaleBy, 0.5);
+        }
+    }
 
-      this.xAxis = axisGroup.append("g").attr("class", "chart-axis-group-x");
-  }
+    setChartAxis(): void {
+        const axisGroup = this.svgGroup
+            .append("g")
+            .attr("class", "chart-axis-group");
 
+        this.yAxis = axisGroup.append("g").attr("class", "chart-axis-group--y");
 
-  setAxis(): void {
-      const xAxisOption = this.options.xAxis;
-      const yAxisOption = this.options.yAxis;
-      const lt = this.data.labels
-          .map((d) => new Date(d))
-          .filter((d, i, arr) => (arr.length > 15 ? i % 2 === 0 : true));
+        this.xAxis = axisGroup.append("g").attr("class", "chart-axis-group-x");
+    }
 
-      if (yAxisOption && yAxisOption.visible) {
-          this.yAxis.call(
-              axisLeft(this.yScale).tickFormat((t, i) => formatNumber(t))
-          );
-      }
+    setAxis(): void {
+        const xAxisOption = this.options.xAxis;
+        const yAxisOption = this.options.yAxis;
+        const lt = this.data.labels
+            .map((d) => new Date(d))
+            .filter((d, i, arr) => (arr.length > 15 ? i % 2 === 0 : true));
 
-      if (xAxisOption && xAxisOption.visible) {
-          this.xAxis
-              .attr("transform", `translate(0,${this.size.height})`)
-              .call(
-                  axisBottom(this.xScale)
-                      .tickValues(lt)
-                      .tickFormat(this.formatTick)
-              );
-      }
-  }
+        if (yAxisOption && yAxisOption.visible) {
+            this.yAxis.call(
+                axisLeft(this.yScale).tickFormat((t, i) => formatNumber(t))
+            );
+        }
 
-  formatTick(date: any): string {
-      const format = this.options.xAxis.format;
+        if (xAxisOption && xAxisOption.visible) {
+            this.xAxis
+                .attr("transform", `translate(0,${this.size.height})`)
+                .call(
+                    axisBottom(this.xScale)
+                        .tickValues(lt)
+                        .tickFormat(this.formatTick)
+                );
+        }
+    }
 
-      if (format) {
-          return dayjs(date).format(format);
-      }
+    formatTick(date: any): string {
+        const format = this.options.xAxis.format;
 
-      return dayjs(date).format("D MMM");
-  }
+        if (format) {
+            return dayjs(date).format(format);
+        }
 
-  setLines() {
-      const groupes = Array.from(
-          group(this.chartData, (d) => d.name),
-          ([key, value]) => ({ key, value })
-      );
+        return dayjs(date).format("D MMM");
+    }
 
-      const lines = this.svgGroup
-          .selectAll("lines")
-          .data(groupes)
-          .enter()
-          .append("g");
+    setLines() {
+        const groupes = Array.from(
+            group(this.chartData, (d) => d.name),
+            ([key, value]) => ({ key, value })
+        );
 
-      lines
-          .append("path")
-          .attr("d", (d) => this.line(d.value))
-          .attr("stroke", (d) => d.value[0].color)
-          .attr("stroke-width", 2)
-          .attr("class", "path");
+        const lines = this.svgGroup
+            .selectAll("lines")
+            .data(groupes)
+            .enter()
+            .append("g");
 
-      this.setDots();
-  }
+        lines
+            .append("path")
+            .attr("d", (d) => this.line(d.value))
+            .attr("stroke", (d) => d.value[0].color)
+            .attr("stroke-width", 2)
+            .attr("class", "path");
 
-  setDots(): void {
-      this.svgGroup
-          .selectAll("circle")
-          .append("g")
-          .data(this.chartData)
-          .enter()
-          .append("circle")
-          .attr("class", "chart_circle")
-          .attr("r", (d) => (d.value !== null ? 3 : 0))
-          .attr("cx", (d) => this.xScale(new Date(d.label)))
-          .attr("cy", (d) => this.yScale(d.value))
-          .attr("fill", (d) => d.color);
-  }
+        this.setDots();
+    }
 
-  onResize(): void {
-      this.setSizes();
-      this.setSvgViewBox();
-      this.setScales();
-      this.setAxis();
+    setDots(): void {
+        this.svgGroup
+            .selectAll("circle")
+            .append("g")
+            .data(this.chartData)
+            .enter()
+            .append("circle")
+            .attr("class", "chart_circle")
+            .attr("r", (d) => (d.value !== null ? 3 : 0))
+            .attr("cx", (d) => this.xScale(new Date(d.label)))
+            .attr("cy", (d) => this.yScale(d.value))
+            .attr("fill", (d) => d.color);
+    }
 
-      this.svgGroup.selectAll(".path").attr("d", (d) => this.line(d.value));
+    onResize(): void {
+        this.setSizes();
+        this.setSvgViewBox();
+        this.setScales();
+        this.setAxis();
 
-      this.svgGroup
-          .selectAll("circle")
-          .attr("r", (d) => (d.value !== null ? 2 : 0))
-          .attr("cx", (d) => this.xScale(new Date(d.label)))
-          .attr("cy", (d) => this.yScale(d.value));
-  }
+        this.svgGroup.selectAll(".path").attr("d", (d) => this.line(d.value));
 
-  onMousemove(e: MouseEvent):void {
-      const label = this.xScale.invert(e.pageX);
+        this.svgGroup
+            .selectAll("circle")
+            .attr("r", (d) => (d.value !== null ? 2 : 0))
+            .attr("cx", (d) => this.xScale(new Date(d.label)))
+            .attr("cy", (d) => this.yScale(d.value));
+    }
 
-      const nearestIndex = this.bisect.center(this.chartData, label);
+    onMousemove(e: MouseEvent): void {
+        const label = this.xScale.invert(e.pageX);
 
-      const nearestIndexData = this.chartData[nearestIndex];
-      const x = this.xScale(new Date(nearestIndexData.label));
+        const nearestIndex = this.bisect.center(this.chartData, label);
 
-      this.selectedInfos = this.chartData.filter(cd => cd.label === nearestIndexData.label);
+        const nearestIndexData = this.chartData[nearestIndex];
+        const x = this.xScale(new Date(nearestIndexData.label));
 
-      this.markerDate!.style('opacity', 1)
-          .style('left', `${x + this.margins.left - (this.markerDate!.node()!.clientWidth / 2)}px`)
-          .style('margin-top', `-${this.margins.bottom}px`)
-          .html(this.formatTick(nearestIndexData.label))
+        this.selectedInfos = this.chartData.filter(
+            (cd) => cd.label === nearestIndexData.label
+        );
 
+        this.markerDate!.style("opacity", 1)
+            .style(
+                "left",
+                `${
+                    x +
+                    this.margins.left -
+                    this.markerDate!.node()!.clientWidth / 2
+                }px`
+            )
+            .style("margin-top", `-${this.margins.bottom}px`)
+            .html(this.formatTick(nearestIndexData.label));
 
-      this.markerLine.style('opacity', 1).attr("x1", x).attr("x2", x).attr("opacity", 1);
-  }
+        this.markerLine
+            .style("opacity", 1)
+            .attr("x1", x)
+            .attr("x2", x)
+            .attr("opacity", 1);
+    }
 
-  onMouseleave(e: MouseEvent):void {
-    this.markerDate!.style('opacity', 0)
-    this.markerLine.style('opacity', 0)
-  }
+    onMouseleave(e: MouseEvent): void {
+        this.markerDate!.style("opacity", 0);
+        this.markerLine.style("opacity", 0);
+    }
 
     mounted(): void {
-      this.initData(this.$refs.lineChart as Element, "line");
-      this.setSizes();
+        this.initData(this.$refs.lineChart as Element, "line");
+        this.setSizes();
 
-      this.setSvgViewBox();
-      this.setChartAxis();
+        this.setSvgViewBox();
+        this.setChartAxis();
 
-      this.setScales();
-      this.setAxis();
+        this.setScales();
+        this.setAxis();
 
-      this.setLines();
-      // this.markerDate
+        this.setLines();
 
-      this.extent = [
-          [0, 0],
-          [
-              this.size.width - this.margins.right,
-              this.size.height - this.margins.top,
-          ],
-      ];
+        this.extent = [
+            [0, 0],
+            [
+                this.size.width - this.margins.right,
+                this.size.height - this.margins.top,
+            ],
+        ];
 
-      this.svg.call(this.zoom).on("wheel.zoom", null);
+        this.svg.call(this.zoom).on("wheel.zoom", null);
 
-      this.svg
-          .on("mousemove", this.onMousemove)
-    .on('mouseleave', this.onMouseleave)
+        this.svg
+            .on("mousemove", this.onMousemove)
+            .on("mouseleave", this.onMouseleave);
 
-      window.addEventListener("resize", this.onResize);
-  }
+        window.addEventListener("resize", this.onResize);
+    }
 }
 </script>
 
@@ -317,12 +322,12 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         opacity: 0.2;
     }
 
-  &__marker-date {
-    border: 1px black solid;
-    position: absolute;
-    background-color: grey;
-    font-size: 11.5px;
-  }
+    &__marker-date {
+        border: 1px black solid;
+        position: absolute;
+        background-color: grey;
+        font-size: 11.5px;
+    }
 }
 path {
     fill: none;
