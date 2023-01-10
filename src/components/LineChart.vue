@@ -19,7 +19,16 @@
             <button @click="zoomOut">-</button>
             <!--          <div class="line-chart__marker-date" />-->
         </div>
-        <chart-tooltip v-if="options.legend" :infos="selectedInfos" />
+        <chart-tooltip
+            key="legend"
+            v-if="options.legend"
+            :infos="selectedInfos"
+        />
+        <chart-tooltip
+            class="marker-legend"
+            key="marker-legend"
+            :infos="selectedInfos"
+        />
     </div>
 </template>
 
@@ -29,13 +38,12 @@ import { bisector, extent as d3Extent, group } from "d3-array";
 import { axisLeft, axisBottom } from "d3-axis";
 import { scaleLinear, scaleTime } from "d3-scale";
 import { zoom } from "d3-zoom";
-import { pointer } from "d3-selection";
 import dayjs from "dayjs";
 import { Component, Emit, Mixins } from "vue-property-decorator";
 import D3Chart from "../d3Chart";
 import formatNumber from "../logic/formatNumber";
 import ChartTooltip from "@/components/ChartTooltip.vue";
-import { select } from "d3";
+import { easeLinear, select, style, transition } from "d3";
 
 @Component({
     components: {
@@ -95,10 +103,6 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
         return null;
     }
-
-    // get markerDate():any {
-    //   return
-    // }
 
     get zoom() {
         if (this.options.chart.zoom) {
@@ -250,7 +254,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     onMousemove(e: MouseEvent): void {
-        const label = this.xScale.invert(e.pageX);
+        const label = this.xScale.invert(e.pageX - 25);
 
         const nearestIndex = this.bisect.center(this.chartData, label);
 
@@ -278,6 +282,29 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .attr("x1", x)
             .attr("x2", x)
             .attr("opacity", 1);
+
+        console.log(this.chartData.length / 2);
+
+        select(".marker-legend")
+            .style("position", "absolute")
+            .transition(transition().duration(80).ease(easeLinear))
+            .style("top", `${this.svg.attr("height") / 2}px`);
+
+        if (nearestIndex < this.data.labels.length / 2) {
+            select(".marker-legend").style(
+                "left",
+                `${x + this.margins.left + this.margins.right}px`
+            );
+        } else {
+            select(".marker-legend").style(
+                "left",
+                `${
+                    x +
+                    this.margins.right -
+                    (select(".marker-legend")!.node() as any).clientWidth
+                }px`
+            );
+        }
     }
 
     onMouseleave(e: MouseEvent): void {
@@ -300,7 +327,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         this.extent = [
             [0, 0],
             [
-                this.size.width - this.margins.right,
+                this.size.width + this.margins.right,
                 this.size.height - this.margins.top,
             ],
         ];
@@ -309,7 +336,11 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
         this.svg
             .on("mousemove", this.onMousemove)
-            .on("mouseleave", this.onMouseleave);
+            .on("mouseleave", this.onMouseleave)
+            .on("wheel.zoom", null)
+            .on("touchend.zoom", null)
+            .on("touchcancel.zoom", null)
+            .on("dblclick.zoom", null);
 
         window.addEventListener("resize", this.onResize);
     }
