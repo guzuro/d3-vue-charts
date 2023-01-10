@@ -188,7 +188,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
         select(".column-chart__tooltip")
             .style("left", x + 10 + "px")
-            .style("top", y + "px");
+            .style("top", y - this.margins.top - this.margins.bottom + "px");
     }
 
     mouseleave() {
@@ -270,7 +270,14 @@ export default class ColumnChart extends Mixins(D3Chart) {
             ],
         ];
 
-        this.svg.call(this.zoom).on("wheel.zoom", null);
+        this.svg
+            .call(this.zoom)
+            .on("wheel.zoom", null)
+            .on("touchstart.zoom", null)
+            .on("touchmove.zoom", null)
+            .on("touchend.zoom", null)
+            .on("touchcancel.zoom", null)
+            .on("dblclick.zoom", null);
 
         window.addEventListener("resize", this.onResize);
     }
