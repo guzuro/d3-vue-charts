@@ -2,12 +2,11 @@
     <div id="app">
         ColumnChart
         <ColumnChart :options="columnOptions" :data="data" />
-        <hr />
-        <hr />
-        <hr />
 
+<div style="margin-top: 100px">
         LineChart
         <LineChart :options="columnOptions" :data="data" />
+</div>
     </div>
 </template>
 
