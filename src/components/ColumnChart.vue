@@ -61,7 +61,6 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
     extent: any = [];
 
-
     get groups() {
         return this.svgGroup
             .selectAll(".chart__bar-group")
@@ -74,14 +73,10 @@ export default class ColumnChart extends Mixins(D3Chart) {
         return [];
     }
 
-    get containerHeight(): number {
-        return this.options.chart.height;
-    }
-
     get zoom() {
         if (this.options.chart.zoom) {
             return zoom()
-                .scaleExtent([1, 8])
+                .scaleExtent([1, 3])
                 .translateExtent(this.extent)
                 .extent(this.extent)
                 .on("zoom", this.zoomed);
@@ -113,7 +108,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
         if (xAxisOption && xAxisOption.visible) {
             this.xAxis
                 .attr("transform", `translate(0,${this.size.height})`)
-                .call(axisBottom(this.xScale));
+                .call(axisBottom(this.xScale).tickValues(this.labelsByWidth(this.data.labels)));
         }
     }
 
@@ -194,9 +189,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
         this.svg
             .selectAll(".column-chart__group")
-            .attr("transform", (d: any) => {
-                return `translate(${this.xScale(d)}, 0)`;
-            });
+            .attr("transform", (d: any) => `translate(${this.xScale(d)}, 0)`);
 
         this.svg
             .selectAll(".column-chart__bar")
@@ -222,24 +215,30 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     zoomed(e: any): void {
-        this.xScale.range(
-            [0, this.size.width - this.margins.right].map((d) =>
-                e.transform.applyX(d)
-            )
-        );
+      this.xScale.range(
+          [0, this.size.width - this.margins.right].map((d) =>
+              e.transform.applyX(d)
+          )
+      );
 
+
+      this.svg
+          .selectAll(".column-chart__group")
+          .attr("transform", (d: any) => `translate(${this.xScale(d)}, 0)`);
+
+      this.xScaleBars.range([0, this.xScale.bandwidth()]);
+
+      this.svg
+          .selectAll(".column-chart__bar")
+          .attr("x", (d: any) => this.xScaleBars(d.name))
+          .attr("width", this.xScaleBars.bandwidth());
+
+      if (e.transform.k > 1.5) {
         this.svg.select(".chart-axis-group-x").call(this.setAxis);
-
-        this.svg
-            .selectAll(".column-chart__group")
-            .attr("transform", (d: any) => `translate(${this.xScale(d)}, 0)`);
-
-        this.xScaleBars.range([0, this.xScale.bandwidth()]);
-
-        this.svg
-            .selectAll(".column-chart__bar")
-            .attr("x", (d: any) => this.xScaleBars(d.name))
-            .attr("width", this.xScaleBars.bandwidth());
+        this.xAxis.call(axisBottom(this.xScale).tickValues(this.data.labels));
+      } else {
+        this.xAxis.call(axisBottom(this.xScale).tickValues(this.labelsByWidth(this.data.labels)));
+      }
     }
 
     mounted(): void {
