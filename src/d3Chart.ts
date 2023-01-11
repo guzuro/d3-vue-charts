@@ -34,6 +34,10 @@ export default class D3Chart extends Vue {
         right: 20,
     };
 
+    get containerHeight(): number {
+        return this.options.chart.height;
+    }
+
     get maxValueFromOptionsData(): number {
         const allSeriesValues = this.chartData.map((s: any) => s.value);
 
@@ -137,6 +141,17 @@ export default class D3Chart extends Vue {
         }
     }
 
+    labelsByWidth(labels:Array<any>):Array<any> {
+        if (this.size.width > 576) {
+            return labels.filter((l, i) => i % 2 === 0)
+        }
+
+        if (this.size.width > 992) {
+            return labels
+        }
+
+        return labels.filter((l, i) => i % 3 === 0)
+    }
 
     setSizes(): void {
         if (this.chartRoot) {
