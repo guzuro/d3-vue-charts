@@ -1,34 +1,29 @@
 <template>
-    <div>
-        <div
+    <div class="line-chart-wrapper" style="position: relative">
+      <button @click="zoomIn">+</button>
+      <button @click="zoomOut">-</button>
+      <div
             class="line-chart"
             ref="lineChart"
             :style="{
                 height: `${containerHeight}px`,
-                position: 'relative',
             }"
         >
-            <div
-                class="line-chart__tooltip"
-                :style="{
-                    position: 'absolute',
-                    opacity: '0',
-                }"
-            />
-            <button @click="zoomIn">+</button>
-            <button @click="zoomOut">-</button>
-            <!--          <div class="line-chart__marker-date" />-->
-        </div>
-        <chart-tooltip
-            key="legend"
-            v-if="options.legend"
-            :infos="selectedInfos"
-        />
         <chart-tooltip
             class="marker-legend"
             key="marker-legend"
-            :infos="selectedInfos"
+            :infos="selectedInfos.values"
+            :header="selectedInfos.header"
+            style=""
         />
+        </div>
+      <chart-tooltip
+          key="legend"
+          class="large-legend"
+          v-if="options.legend"
+          :infos="selectedInfos.values"
+          @infoClick="toggleSelectedLegendName"
+      />
     </div>
 </template>
 
@@ -38,12 +33,12 @@ import { bisector, extent as d3Extent, group } from "d3-array";
 import { axisLeft, axisBottom } from "d3-axis";
 import { scaleLinear, scaleTime } from "d3-scale";
 import { zoom } from "d3-zoom";
-import dayjs from "dayjs";
+
 import { Component, Emit, Mixins } from "vue-property-decorator";
 import D3Chart from "../d3Chart";
 import formatNumber from "../logic/formatNumber";
 import ChartTooltip from "@/components/ChartTooltip.vue";
-import { easeLinear, select, style, transition } from "d3";
+import { select } from 'd3'
 
 @Component({
     components: {
@@ -60,23 +55,29 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     xScale = scaleTime();
+    
+    xScaleValue = (d) => this.xScale(new Date(d.label))
 
     yScale = scaleLinear();
 
     yAxis: any = null;
 
     xAxis: any = null;
+
     extent: any = [];
 
     line = line<any>()
         .defined((d: any) => d.value !== null)
-        .x((d) => this.xScale(new Date(d.label)))
+        .x(this.xScaleValue)
         .y((d) => this.yScale(d.value))
         .curve(curveMonotoneX);
 
-    selectedInfos: any[] = [];
+    selectedInfos:any = {
+      header: '',
+      values: []
+    };
 
-    get bisect() {
+   get bisect() {
         return bisector((d: any) => new Date(d.label));
     }
 
@@ -110,7 +111,8 @@ export default class extends Mixins<D3Chart>(D3Chart) {
                 .scaleExtent([1, 8])
                 .translateExtent(this.extent)
                 .extent(this.extent)
-                .on("zoom", this.zoomed);
+                .on("zoom", this.zoomed)
+                .on("zoom.mousedown", this.onMouseleave);
         }
 
         return null;
@@ -120,10 +122,12 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         return this.options.chart.height;
     }
 
-    setScales(): void {
-        const lt = this.data.labels.map((d) => new Date(d));
+    get dateLabels():Array<Date> {
+        return this.data.labels.map((d) => new Date(d))
+    }
 
-        this.xScale.domain(d3Extent(lt) as any).range([0, this.size.width]);
+    setScales(): void {
+        this.xScale.domain(d3Extent(this.dateLabels) as any).range([0, this.size.width]);
 
         this.yScale
             .range([0, this.size.height])
@@ -134,6 +138,12 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         if (this.zoom) {
             this.svg.call(this.zoom.scaleBy, 1.5);
         }
+    }
+
+    zoomOut() {
+      if (this.zoom) {
+        this.svg.call(this.zoom.scaleBy, 0.5);
+      }
     }
 
     zoomed(e: any): void {
@@ -148,14 +158,8 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
         this.svgGroup
             .selectAll("circle")
-            .attr("cx", (d) => this.xScale(new Date(d.label)))
+            .attr("cx", this.xScaleValue)
             .attr("cy", (d) => this.yScale(d.value));
-    }
-
-    zoomOut() {
-        if (this.zoom) {
-            this.svg.call(this.zoom.scaleBy, 0.5);
-        }
     }
 
     setChartAxis(): void {
@@ -171,8 +175,8 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     setAxis(): void {
         const xAxisOption = this.options.xAxis;
         const yAxisOption = this.options.yAxis;
-        const lt = this.data.labels
-            .map((d) => new Date(d))
+
+        const evenLabels = this.dateLabels
             .filter((d, i, arr) => (arr.length > 15 ? i % 2 === 0 : true));
 
         if (yAxisOption && yAxisOption.visible) {
@@ -186,20 +190,10 @@ export default class extends Mixins<D3Chart>(D3Chart) {
                 .attr("transform", `translate(0,${this.size.height})`)
                 .call(
                     axisBottom(this.xScale)
-                        .tickValues(lt)
+                        .tickValues(evenLabels)
                         .tickFormat(this.formatTick)
                 );
         }
-    }
-
-    formatTick(date: any): string {
-        const format = this.options.xAxis.format;
-
-        if (format) {
-            return dayjs(date).format(format);
-        }
-
-        return dayjs(date).format("D MMM");
     }
 
     setLines() {
@@ -212,14 +206,15 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .selectAll("lines")
             .data(groupes)
             .enter()
-            .append("g");
+            .append("g")
+            .attr("id", (d) => d.value[0].id);
 
         lines
             .append("path")
             .attr("d", (d) => this.line(d.value))
             .attr("stroke", (d) => d.value[0].color)
             .attr("stroke-width", 2)
-            .attr("class", "path");
+            .attr("class", "path")
 
         this.setDots();
     }
@@ -233,7 +228,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .append("circle")
             .attr("class", "chart_circle")
             .attr("r", (d) => (d.value !== null ? 3 : 0))
-            .attr("cx", (d) => this.xScale(new Date(d.label)))
+            .attr("cx", this.xScaleValue)
             .attr("cy", (d) => this.yScale(d.value))
             .attr("fill", (d) => d.color);
     }
@@ -249,67 +244,71 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         this.svgGroup
             .selectAll("circle")
             .attr("r", (d) => (d.value !== null ? 2 : 0))
-            .attr("cx", (d) => this.xScale(new Date(d.label)))
+            .attr("cx", this.xScaleValue)
             .attr("cy", (d) => this.yScale(d.value));
     }
 
+    get lineChartWrapper() {
+      return select('.line-chart-wrapper')
+    }
+
+    get markerLegend() {
+      return this.lineChartWrapper
+          .select('.marker-legend')
+    }
+
+  updateMarkerDate(dateLabel:string, positionX:number):void {
+    this.markerDate!.style("opacity", 1)
+        .style("left", `${ positionX + this.margins.left - this.markerDate!.node()!.clientWidth / 2 }px`)
+        .style("margin-top", `-${this.margins.bottom}px`)
+        .html(this.formatTick(dateLabel));
+    }
+
+    updateMarkerLegend(indexFound:number, positionX:number):void {
+      const markerLegend = select(".marker-legend")
+
+      markerLegend
+          .style('opacity', 1)
+          .style("top", `${this.svg.attr("height") / 2}px`);
+
+      let positionLeft: string
+
+      if (indexFound < this.data.labels.length / 2) {
+        positionLeft = `${positionX + this.margins.left + this.margins.right}px`
+      } else {
+        positionLeft = `${ positionX + this.margins.right - (markerLegend.node() as any).clientWidth }px`
+      }
+
+      markerLegend.style("left", positionLeft);
+    }
+
+    updateSelectedValues(data):void {
+      this.$set(this.selectedInfos, 'header', data.label)
+      this.selectedInfos.values = this.chartData.filter((cd) => cd.label === data.label)
+    }
+
     onMousemove(e: MouseEvent): void {
-        const label = this.xScale.invert(e.pageX - 25);
+        const label = this.xScale.invert(e.pageX - this.margins.left);
 
         const nearestIndex = this.bisect.center(this.chartData, label);
-
         const nearestIndexData = this.chartData[nearestIndex];
-        const x = this.xScale(new Date(nearestIndexData.label));
 
-        this.selectedInfos = this.chartData.filter(
-            (cd) => cd.label === nearestIndexData.label
-        );
-
-        this.markerDate!.style("opacity", 1)
-            .style(
-                "left",
-                `${
-                    x +
-                    this.margins.left -
-                    this.markerDate!.node()!.clientWidth / 2
-                }px`
-            )
-            .style("margin-top", `-${this.margins.bottom}px`)
-            .html(this.formatTick(nearestIndexData.label));
+        const x = this.xScaleValue(nearestIndexData);
 
         this.markerLine
             .style("opacity", 1)
             .attr("x1", x)
             .attr("x2", x)
-            .attr("opacity", 1);
 
-        console.log(this.chartData.length / 2);
-
-        select(".marker-legend")
-            .style("position", "absolute")
-            .transition(transition().duration(80).ease(easeLinear))
-            .style("top", `${this.svg.attr("height") / 2}px`);
-
-        if (nearestIndex < this.data.labels.length / 2) {
-            select(".marker-legend").style(
-                "left",
-                `${x + this.margins.left + this.margins.right}px`
-            );
-        } else {
-            select(".marker-legend").style(
-                "left",
-                `${
-                    x +
-                    this.margins.right -
-                    (select(".marker-legend")!.node() as any).clientWidth
-                }px`
-            );
-        }
+        this.updateSelectedValues(nearestIndexData)
+        this.updateMarkerDate(nearestIndexData.label, x)
+        this.updateMarkerLegend(nearestIndex, x)
     }
 
-    onMouseleave(e: MouseEvent): void {
+    onMouseleave(): void {
         this.markerDate!.style("opacity", 0);
         this.markerLine.style("opacity", 0);
+        this.markerLegend.style("opacity", 0);
     }
 
     mounted(): void {
@@ -332,35 +331,59 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             ],
         ];
 
-        this.svg.call(this.zoom).on("wheel.zoom", null);
+        this.selectedInfos.values = this.data.series.map((s, i) => ({
+          name: s.name,
+          color: this.options.colors[i],
+          value: '-'
+        }))
 
-        this.svg
+        this.svg.call(this.zoom)
+            .on("wheel.zoom", null)
             .on("mousemove", this.onMousemove)
             .on("mouseleave", this.onMouseleave)
             .on("wheel.zoom", null)
             .on("touchend.zoom", null)
             .on("touchcancel.zoom", null)
-            .on("dblclick.zoom", null);
+            .on("dblclick.zoom", null)
 
-        window.addEventListener("resize", this.onResize);
+
+        // this.svg.call(() => {
+        //   drag().on('start', (event) => {
+        //     console.log(event)
+        //   })
+        // })
+
+       window.addEventListener("resize", this.onResize);
     }
 }
 </script>
 
 <style lang="scss">
+* {
+  font-family: Montserrat, Helvetica, Arial, sans-serif;
+  font-weight: 500;
+}
+
 .line-chart {
+
     &__marker {
         opacity: 0.2;
     }
 
     &__marker-date {
-        border: 1px black solid;
+        background-color: rgb(243, 243, 243);
+        border: 1px solid rgb(194, 194, 194);
         position: absolute;
-        background-color: grey;
         font-size: 11.5px;
     }
 }
 path {
     fill: none;
+}
+
+.marker-legend {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none
 }
 </style>
