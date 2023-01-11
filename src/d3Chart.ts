@@ -1,8 +1,9 @@
-import { select } from "d3";
+import { select, selectAll } from 'd3'
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop } from "vue-property-decorator";
 import mapData from "./logic/mapData";
+import dayjs from 'dayjs'
 
 type MarginSides = "top" | "bottom" | "left" | "right";
 type D3SelectionReturnType = ReturnType<typeof select>;
@@ -16,8 +17,6 @@ export default class D3Chart extends Vue {
     @Prop() options!: any;
 
     chartRoot: D3SelectionReturnType | null = null;
-
-    wrapper: any | null = null;
 
     svg: any | null = null;
 
@@ -79,11 +78,7 @@ export default class D3Chart extends Vue {
 
     setChartDom(chartType: string): void {
         if (this.chartRoot) {
-            this.wrapper = this.chartRoot
-                .append("div")
-                .attr("class", `chart-wrapper-${chartType}`);
-
-            this.svg = this.wrapper
+            this.svg = this.chartRoot
                 .append("svg")
                 .attr("class", `chart-${chartType}`);
 
@@ -120,6 +115,28 @@ export default class D3Chart extends Vue {
                 );
         }
     }
+
+    formatTick(date: any): string {
+        const format = this.options.xAxis.format;
+
+        if (format) {
+            return dayjs(date).format(format);
+        }
+
+        return dayjs(date).format("D MMM");
+    }
+
+    toggleSelectedLegendName(id): any {
+        const selector = `[id='${id}']`;
+        const queryAll = selectAll(selector);
+
+        if (select(selector).attr("opacity") === "0") {
+            queryAll.attr("opacity", 1);
+        } else {
+            queryAll.attr("opacity", 0);
+        }
+    }
+
 
     setSizes(): void {
         if (this.chartRoot) {
