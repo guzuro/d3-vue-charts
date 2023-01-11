@@ -77,7 +77,12 @@ export default class extends Mixins<D3Chart>(D3Chart) {
       values: []
     };
 
-   get bisect() {
+
+    get bottomAxis() {
+      return axisBottom(this.xScale).tickFormat(this.formatTick)
+    }
+
+    get bisect() {
         return bisector((d: any) => new Date(d.label));
     }
 
@@ -105,26 +110,22 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         return null;
     }
 
-    get zoom() {
-        if (this.options.chart.zoom) {
-            return zoom()
-                .scaleExtent([1, 8])
-                .translateExtent(this.extent)
-                .extent(this.extent)
-                .on("zoom", this.zoomed)
-                .on("zoom.mousedown", this.onMouseleave);
-        }
-
-        return null;
-    }
-
-    get containerHeight(): number {
-        return this.options.chart.height;
-    }
-
     get dateLabels():Array<Date> {
         return this.data.labels.map((d) => new Date(d))
     }
+
+  get zoom() {
+    if (this.options.chart.zoom) {
+      return zoom()
+          .scaleExtent([1, 3])
+          .translateExtent(this.extent)
+          .extent(this.extent)
+          .on("zoom", this.zoomed)
+          .on("zoom.mousedown", this.onMouseleave);
+    }
+
+    return null;
+  }
 
     setScales(): void {
         this.xScale.domain(d3Extent(this.dateLabels) as any).range([0, this.size.width]);
@@ -147,19 +148,25 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     zoomed(e: any): void {
-        this.xScale.range(
-            [0, this.size.width - this.margins.right].map((d) =>
-                e.transform.applyX(d)
-            )
-        );
+      this.xScale.range(
+          [0, this.size.width - this.margins.right].map((d) =>
+              e.transform.applyX(d)
+          )
+      );
 
-        this.svg.select(".chart-axis-group-x").call(this.setAxis);
-        this.svgGroup.selectAll(".path").attr("d", (d) => this.line(d.value));
+      this.svgGroup
+          .selectAll("circle")
+          .attr("cx", this.xScaleValue)
+          .attr("cy", (d) => this.yScale(d.value));
 
-        this.svgGroup
-            .selectAll("circle")
-            .attr("cx", this.xScaleValue)
-            .attr("cy", (d) => this.yScale(d.value));
+      this.svgGroup.selectAll(".path").attr("d", (d) => this.line(d.value));
+
+      if (e.transform.k > 1.5) {
+         this.svg.select(".chart-axis-group-x").call(this.setAxis);
+         this.xAxis.call(this.bottomAxis.tickValues(this.dateLabels));
+      } else {
+        this.xAxis.call(this.bottomAxis.tickValues(this.labelsByWidth(this.dateLabels)));
+      }
     }
 
     setChartAxis(): void {
@@ -188,11 +195,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         if (xAxisOption && xAxisOption.visible) {
             this.xAxis
                 .attr("transform", `translate(0,${this.size.height})`)
-                .call(
-                    axisBottom(this.xScale)
-                        .tickValues(evenLabels)
-                        .tickFormat(this.formatTick)
-                );
+                .call(this.bottomAxis.tickValues(this.labelsByWidth(evenLabels)));
         }
     }
 
@@ -253,15 +256,14 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     get markerLegend() {
-      return this.lineChartWrapper
-          .select('.marker-legend')
+      return this.lineChartWrapper.select('.marker-legend')
     }
 
-  updateMarkerDate(dateLabel:string, positionX:number):void {
-    this.markerDate!.style("opacity", 1)
-        .style("left", `${ positionX + this.margins.left - this.markerDate!.node()!.clientWidth / 2 }px`)
-        .style("margin-top", `-${this.margins.bottom}px`)
-        .html(this.formatTick(dateLabel));
+    updateMarkerDate(dateLabel:string, positionX:number):void {
+      this.markerDate!.style("opacity", 1)
+          .style("left", `${ positionX + this.margins.left - this.markerDate!.node()!.clientWidth / 2 }px`)
+          .style("margin-top", `-${this.margins.bottom}px`)
+          .html(this.formatTick(dateLabel));
     }
 
     updateMarkerLegend(indexFound:number, positionX:number):void {
@@ -326,7 +328,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         this.extent = [
             [0, 0],
             [
-                this.size.width + this.margins.right,
+                this.size.width - this.margins.right,
                 this.size.height - this.margins.top,
             ],
         ];
@@ -345,13 +347,6 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .on("touchend.zoom", null)
             .on("touchcancel.zoom", null)
             .on("dblclick.zoom", null)
-
-
-        // this.svg.call(() => {
-        //   drag().on('start', (event) => {
-        //     console.log(event)
-        //   })
-        // })
 
        window.addEventListener("resize", this.onResize);
     }
