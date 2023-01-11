@@ -21,7 +21,7 @@
         <chart-tooltip
             v-if="options.legend"
             :infos="mappedLegend"
-            @infoClick="handle"
+            @infoClick="toggleSelectedLegendName"
         />
     </div>
 </template>
@@ -61,16 +61,6 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
     extent: any = [];
 
-    handle(id): any {
-        const selector = `[id='${id}']`;
-        const queryAll = selectAll(selector);
-
-        if (select(selector).attr("opacity") === "0") {
-            queryAll.attr("opacity", 1);
-        } else {
-            queryAll.attr("opacity", 0);
-        }
-    }
 
     get groups() {
         return this.svgGroup
@@ -180,7 +170,8 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
         select(".column-chart__tooltip")
             .html(tooltip.$el.outerHTML)
-            .style("opacity", 1);
+            .style("opacity", 1)
+            .style('pointer-events', 'none');
     }
 
     mousemove(e: MouseEvent) {
@@ -273,8 +264,6 @@ export default class ColumnChart extends Mixins(D3Chart) {
         this.svg
             .call(this.zoom)
             .on("wheel.zoom", null)
-            .on("touchstart.zoom", null)
-            .on("touchmove.zoom", null)
             .on("touchend.zoom", null)
             .on("touchcancel.zoom", null)
             .on("dblclick.zoom", null);
