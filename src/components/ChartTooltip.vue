@@ -1,8 +1,8 @@
 <template>
     <div class="tooltip">
-        <div v-if="header" class="tooltip__header">
+        <small v-if="header" class="tooltip__header">
             {{ header }}
-        </div>
+        </small>
         <div class="tooltip__data list">
             <div
                 v-for="info in infos"
@@ -10,18 +10,18 @@
                 class="list__item item"
                 @click="$emit('infoClick', info.id)"
             >
+                <!-- <template v-if="infos.length > 1"> -->
                 <div
                     class="item__color"
                     :style="{
                         backgroundColor: info.color,
                     }"
                 />
-                <span class="item__value">
-                    {{ info.name }}
-                </span>
-                <span v-if="info.value" class="item__value">{{
-                    `: ${info.value}`
-                }}</span>
+                <small class="item__value">{{ sliceName(info.name) }}:</small>
+                <!-- </template> -->
+                <small v-if="info.value" class="item__value">{{
+                    ` ${info.value}`
+                }}</small>
             </div>
         </div>
     </div>
@@ -35,6 +35,14 @@ export default class extends Vue {
     @Prop() header!: string;
 
     @Prop() infos!: any[];
+
+    sliceName(str: string): string {
+        if (str.length > 15) {
+            return str.slice(0, 14) + "...";
+        }
+
+        return str;
+    }
 }
 </script>
 
