@@ -52,10 +52,12 @@ export default class extends Vue {
     get listStyles(): Record<string, string> {
         if (this.mode === 'full') {
             return {
+                'gap': '5px',
                 'flex-direction': 'row'
             }
         } else {
             return {
+                'gap': '2px',
                 'flex-direction': 'column'
             }
         }
@@ -97,7 +99,6 @@ export default class extends Vue {
 
 <style scoped lang="scss">
 .tooltip {
-    margin-top: 15px;
     display: flex;
     flex-direction: column;
     background-color: white;
@@ -113,7 +114,6 @@ export default class extends Vue {
 .list {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
     justify-content: space-around;
 
     &__item {
