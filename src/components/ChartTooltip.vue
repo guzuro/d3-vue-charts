@@ -124,6 +124,12 @@ export default class extends Vue {
 }
 
 .item {
+    cursor: pointer;
+
+    &:hover {
+        opacity: 0.7;
+    }
+
     &__color {
         min-width: 10px;
         height: 10px;
