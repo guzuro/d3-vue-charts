@@ -4,7 +4,7 @@
         <button @click="zoomOut">-</button>
 
         <div
-            :class="`column-chart column-chart-${GUID}`"
+            class="column-chart"
             ref="columnChart"
             :style="{
                 position: 'relative',

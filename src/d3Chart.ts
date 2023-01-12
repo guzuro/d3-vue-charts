@@ -1,10 +1,10 @@
-import {select, selectAll} from 'd3'
+import { select, selectAll } from "d3";
 import Vue from "vue";
 import Component from "vue-class-component";
-import {Prop} from "vue-property-decorator";
+import { Prop } from "vue-property-decorator";
 import mapData from "./logic/mapData";
-import dayjs from 'dayjs'
-import {Guid} from "guid-typescript";
+import dayjs from "dayjs";
+import { Guid } from "guid-typescript";
 
 type MarginSides = "top" | "bottom" | "left" | "right";
 type D3SelectionReturnType = ReturnType<typeof select>;
@@ -33,7 +33,7 @@ export default class D3Chart extends Vue {
         right: 35,
     };
 
-    GUID = Guid.create().toString()
+    GUID = Guid.create().toString();
 
     get containerHeight(): number {
         return this.options.chart.height;
@@ -46,7 +46,7 @@ export default class D3Chart extends Vue {
     }
 
     private get setIdsToSeries(): any {
-        const {series, labels} = this.data;
+        const { series, labels } = this.data;
         const modifiedSeries = series.map((s) => ({
             ...s,
             id: Math.random(),
@@ -75,23 +75,23 @@ export default class D3Chart extends Vue {
     }
 
     initialiseMargins(): void {
-        const yAxisVisible = this.options.yAxis.visible
-        const xAxisVisible = this.options.xAxis.visible
-        const userMargins = this.options.margins
+        const yAxisVisible = this.options.yAxis.visible;
+        const xAxisVisible = this.options.xAxis.visible;
+        const userMargins = this.options.margins;
 
         if (!xAxisVisible) {
-            this.$set(this.margins, 'bottom', 5)
+            this.$set(this.margins, "bottom", 5);
         }
 
         if (!yAxisVisible) {
-            this.$set(this.margins, 'left', 5)
-            this.$set(this.margins, 'right', 5)
+            this.$set(this.margins, "left", 5);
+            this.$set(this.margins, "right", 5);
         }
 
-        if (userMargins) {
+        if (userMargins && Object.keys(userMargins).length) {
             Object.entries(userMargins).forEach(([marginSide, value]) => {
-                this.$set(this.margins, marginSide, value)
-            })
+                this.$set(this.margins, marginSide, value);
+            });
         }
     }
 
@@ -100,7 +100,7 @@ export default class D3Chart extends Vue {
 
         this.setSizes();
         this.setChartDom(chartType);
-        this.initialiseMargins()
+        this.initialiseMargins();
     }
 
     setChartDom(chartType: string): void {
@@ -113,13 +113,12 @@ export default class D3Chart extends Vue {
 
     setSvgViewBox(): void {
         if (this.svg) {
-            this.svg
-                .attr(
-                    "viewBox",
-                    `0 0 ${this.size.width} ${this.size.height}`
-                )
+            this.svg.attr(
+                "viewBox",
+                `0 0 ${this.size.width} ${this.size.height}`
+            );
 
-            this.setDefaultClipPath()
+            this.setDefaultClipPath();
         }
     }
 
@@ -146,19 +145,20 @@ export default class D3Chart extends Vue {
 
     labelsByWidth(labels: Array<any>): Array<any> {
         if (this.size.width < 576) {
-            return labels.filter((l, i) => i % 3 === 0)
+            return labels.filter((l, i) => i % 3 === 0);
         }
 
         if (this.size.width < 992) {
-            return labels.filter((l, i) => i % 2 === 0)
+            return labels.filter((l, i) => i % 2 === 0);
         }
 
-        return labels
-
+        return labels;
     }
 
     setDefaultClipPath() {
-        this.svg.append("defs").append("svg:clipPath")
+        this.svg
+            .append("defs")
+            .append("svg:clipPath")
             .attr("id", "clip")
             .append("svg:rect")
             .attr("width", this.size.width)
@@ -172,8 +172,7 @@ export default class D3Chart extends Vue {
             const node = this.chartRoot.node() as HTMLDivElement;
 
             if (node) {
-                this.size.width =
-                    node.offsetWidth;
+                this.size.width = node.offsetWidth;
                 this.size.height = this.options.chart.height;
             }
         }
