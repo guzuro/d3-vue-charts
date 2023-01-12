@@ -4,19 +4,14 @@
             class="column-chart"
             ref="columnChart"
             :style="{
-                height: `${containerHeight}px`,
                 position: 'relative',
+                height: `${containerHeight}px`,
             }"
         >
-            <div
-                class="column-chart__tooltip"
-                :style="{
-                    position: 'absolute',
-                    opacity: '0',
-                }"
-            />
             <button @click="zoomIn">+</button>
             <button @click="zoomOut">-</button>
+
+            <div class="column-chart__tooltip"/>
         </div>
         <chart-tooltip
             v-if="options.legend"
@@ -29,7 +24,7 @@
 <script lang="ts">
 import D3Chart from "../d3Chart";
 
-import { Component, Mixins } from "vue-property-decorator";
+import {Component, Mixins} from "vue-property-decorator";
 import {
     axisBottom,
     axisLeft,
@@ -37,7 +32,6 @@ import {
     scaleBand,
     scaleLinear,
     select,
-    selectAll,
     zoom,
 } from "d3";
 import ChartTooltip from "./ChartTooltip.vue";
@@ -62,7 +56,9 @@ export default class ColumnChart extends Mixins(D3Chart) {
     extent: any = [];
 
     get groups() {
-        return this.svgGroup
+        return this.svg
+            .append('g')
+            .attr("clip-path", "url(#clip)")
             .selectAll(".chart__bar-group")
             .data(this.data.labels);
     }
@@ -90,7 +86,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     setChartAxis(): void {
-        const axisGroup = this.svgGroup
+        const axisGroup = this.svg
             .append("g")
             .attr("class", "chart-axis-group");
 
@@ -104,26 +100,30 @@ export default class ColumnChart extends Mixins(D3Chart) {
         const yAxisOption = this.options.yAxis;
 
         if (yAxisOption && yAxisOption.visible) {
-            this.yAxis.call(
-                axisLeft(this.yScale).tickFormat((t, i) => formatNumber(t))
-            );
+            this.yAxis
+                .attr("transform", `translate(${this.margins.left},0)`)
+                .call(
+                    axisLeft(this.yScale).tickFormat((t, i) => formatNumber(t))
+                );
         }
 
         if (xAxisOption && xAxisOption.visible) {
             this.xAxis
-                .attr("transform", `translate(0,${this.size.height})`)
-                .call(axisBottom(this.xScale).tickValues(this.labelsByWidth(this.data.labels)));
+                .attr("transform", `translate(0,${this.size.height - this.margins.bottom})`)
+                .call(
+                    axisBottom(this.xScale)
+                        .tickValues(this.labelsByWidth(this.data.labels)));
         }
     }
 
     setScales(): void {
         this.xScale
-            .range([0, this.size.width])
+            .range([this.margins.left, this.size.width - this.margins.right])
             .paddingInner(0.1)
             .domain(this.data.labels);
 
         this.yScale
-            .range([0, this.size.height])
+            .range([this.margins.top, this.size.height - this.margins.bottom])
             .domain([this.maxValueFromOptionsData, 0]);
 
         this.xScaleBars
@@ -152,22 +152,20 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .attr("id", (d: any) => d.id)
             .attr(
                 "height",
-                (d: any) => this.size.height - +this.yScale(d.value)
+                (d: any) => this.size.height - this.margins.bottom - +this.yScale(d.value)
             )
             .on("mouseover", this.mouseover)
             .on("mousemove", this.mousemove)
             .on("mouseleave", this.mouseleave);
     }
 
-
     mouseover(_: MouseEvent, d: any) {
         const tooltip = new ChartTooltip({
             propsData: {
                 header: d.label,
-                infos: [{ ...d }],
+                infos: [{...d}],
             },
         }).$mount();
-
 
         this.columnTooltip
             .html(tooltip.$el.outerHTML)
@@ -176,25 +174,25 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     mousemove(e: MouseEvent) {
-      const [x, y] = pointer(e, this.svg);
+        const [x, y] = pointer(e, this.svg);
 
-      let leftPosition = x
+        let leftPosition = x
 
-      const tooltipBounding = (this.columnTooltip.node() as HTMLElement).getBoundingClientRect();
-      const offset = x + tooltipBounding.width
-      const screen = window.innerWidth
+        const tooltipBounding = (this.columnTooltip.node() as HTMLElement).getBoundingClientRect();
+        const offset = x + tooltipBounding.width
+        const screen = window.innerWidth
 
-      if (offset > screen + 8) {
-        leftPosition = screen - tooltipBounding.width - this.margins.right
-      }
+        if (offset > screen + 8) {
+            leftPosition = screen - tooltipBounding.width - this.margins.right
+        }
 
-      this.columnTooltip
-          .style("top", y - this.margins.top - this.margins.bottom + "px")
-          .style("left",  leftPosition+ "px");
+        this.columnTooltip
+            .style("top", y - this.margins.top - this.margins.bottom + "px")
+            .style("left", leftPosition + "px");
     }
 
     mouseleave() {
-      this.columnTooltip.style("opacity", 0);
+        this.columnTooltip.style("opacity", 0);
     }
 
     onResize(): void {
@@ -214,7 +212,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .attr("width", this.xScaleBars.bandwidth())
             .attr(
                 "height",
-                (d: any) => this.size.height - +this.yScale(d.value)
+                (d: any) => this.size.height - this.margins.bottom - +this.yScale(d.value)
             );
     }
 
@@ -231,29 +229,35 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     zoomed(e: any): void {
-      this.xScale.range(
-          [0, this.size.width - this.margins.right].map((d) =>
-              e.transform.applyX(d)
-          )
-      );
+        this.xScale.range(
+            [this.margins.left, this.size.width - this.margins.right].map((d) =>
+                e.transform.applyX(d)
+            )
+        );
 
-      this.svg
-          .selectAll(".column-chart__group")
-          .attr("transform", (d: any) => `translate(${this.xScale(d)}, 0)`);
+        this.svg
+            .selectAll(".column-chart__group")
+            .attr("transform", (d: any) => `translate(${this.xScale(d)}, 0)`);
 
-      this.xScaleBars.range([0, this.xScale.bandwidth()]);
+        this.xScaleBars.range([0, this.xScale.bandwidth()]);
 
-      this.svg
-          .selectAll(".column-chart__bar")
-          .attr("x", (d: any) => this.xScaleBars(d.name))
-          .attr("width", this.xScaleBars.bandwidth());
+        this.svg
+            .selectAll(".column-chart__bar")
+            .attr("x", (d: any) => this.xScaleBars(d.name))
+            .attr("width", this.xScaleBars.bandwidth());
 
-      if (e.transform.k > 1.5) {
-        this.svg.select(".chart-axis-group-x").call(this.setAxis);
-        this.xAxis.call(axisBottom(this.xScale).tickValues(this.data.labels));
-      } else {
-        this.xAxis.call(axisBottom(this.xScale).tickValues(this.labelsByWidth(this.data.labels)));
-      }
+        if (e.transform.k > 1.5) {
+            this.svg.select(".chart-axis-group-x").call(this.setAxis);
+            this.xAxis.call(
+                axisBottom(this.xScale)
+                    .tickValues(this.data.labels)
+            );
+        } else {
+            this.xAxis.call(
+                axisBottom(this.xScale)
+                    .tickValues(this.labelsByWidth(this.data.labels))
+            );
+        }
     }
 
     mounted(): void {
@@ -268,7 +272,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
         this.setChartData();
 
         this.extent = [
-            [0, 0],
+            [this.margins.left, this.margins.top],
             [
                 this.size.width - this.margins.right,
                 this.size.height - this.margins.top,
@@ -288,9 +292,16 @@ export default class ColumnChart extends Mixins(D3Chart) {
 </script>
 
 <style lang="scss">
-.chart__bar {
-    &:hover {
-        opacity: 0.7;
+.column-chart {
+    &__bar {
+        &:hover {
+            opacity: 0.6;
+        }
+    }
+
+    &__tooltip {
+        position: absolute;
+        opacity: 0;
     }
 }
 </style>

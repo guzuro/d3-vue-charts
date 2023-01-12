@@ -14,7 +14,7 @@
             key="marker-legend"
             :infos="selectedInfos.values"
             :header="selectedInfos.header"
-            style=""
+            mode="slim"
         />
         </div>
       <chart-tooltip
@@ -87,14 +87,14 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     get markerLine(): any {
-        return this.svgGroup
+        return this.svg
             .append("line")
             .attr("class", "line-chart__marker")
             .attr("x1", 0)
             .attr("x2", 0)
             .attr("y1", 0)
-            .attr("y2", this.size.height + this.margins.top)
-            .attr("stroke-width", 1)
+            .attr("y2", this.size.height - this.margins.bottom)
+            .attr("stroke-width", 0.5)
             .attr("stroke-dasharray", 7)
             .attr("stroke", "black");
     }
@@ -128,10 +128,10 @@ export default class extends Mixins<D3Chart>(D3Chart) {
   }
 
     setScales(): void {
-        this.xScale.domain(d3Extent(this.dateLabels) as any).range([0, this.size.width]);
+        this.xScale.domain(d3Extent(this.dateLabels) as any).range([this.margins.left, this.size.width - this.margins.right]);
 
         this.yScale
-            .range([0, this.size.height])
+            .range([this.margins.top, this.size.height - this.margins.bottom])
             .domain([this.maxValueFromOptionsData, 0]);
     }
 
@@ -149,17 +149,17 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
     zoomed(e: any): void {
       this.xScale.range(
-          [0, this.size.width - this.margins.right].map((d) =>
+          [this.margins.left, this.size.width - this.margins.right].map((d) =>
               e.transform.applyX(d)
           )
       );
 
-      this.svgGroup
+      this.svg
           .selectAll("circle")
           .attr("cx", this.xScaleValue)
           .attr("cy", (d) => this.yScale(d.value));
 
-      this.svgGroup.selectAll(".path").attr("d", (d) => this.line(d.value));
+      this.svg.selectAll(".path").attr("d", (d) => this.line(d.value));
 
       if (e.transform.k > 1.5) {
          this.svg.select(".chart-axis-group-x").call(this.setAxis);
@@ -170,7 +170,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     setChartAxis(): void {
-        const axisGroup = this.svgGroup
+        const axisGroup = this.svg
             .append("g")
             .attr("class", "chart-axis-group");
 
@@ -187,14 +187,16 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .filter((d, i, arr) => (arr.length > 15 ? i % 2 === 0 : true));
 
         if (yAxisOption && yAxisOption.visible) {
-            this.yAxis.call(
+            this.yAxis
+                .attr("transform", `translate(${this.margins.left},0)`)
+                .call(
                 axisLeft(this.yScale).tickFormat((t, i) => formatNumber(t))
             );
         }
 
         if (xAxisOption && xAxisOption.visible) {
             this.xAxis
-                .attr("transform", `translate(0,${this.size.height})`)
+                .attr("transform", `translate(0,${this.size.height - this.margins.bottom})`)
                 .call(this.bottomAxis.tickValues(this.labelsByWidth(evenLabels)));
         }
     }
@@ -205,7 +207,9 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             ([key, value]) => ({ key, value })
         );
 
-        const lines = this.svgGroup
+        const lines = this.svg
+            .append('g')
+            .attr("clip-path", "url(#clip)")
             .selectAll("lines")
             .data(groupes)
             .enter()
@@ -223,7 +227,9 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     setDots(): void {
-        this.svgGroup
+        this.svg
+            .append('g')
+            .attr("clip-path", "url(#clip)")
             .selectAll("circle")
             .append("g")
             .data(this.chartData)
@@ -242,46 +248,40 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         this.setScales();
         this.setAxis();
 
-        this.svgGroup.selectAll(".path").attr("d", (d) => this.line(d.value));
+        this.svg.selectAll(".path").attr("d", (d) => this.line(d.value));
 
-        this.svgGroup
+        this.svg
             .selectAll("circle")
             .attr("r", (d) => (d.value !== null ? 2 : 0))
             .attr("cx", this.xScaleValue)
             .attr("cy", (d) => this.yScale(d.value));
     }
 
-    get lineChartWrapper() {
-      return select('.line-chart-wrapper')
-    }
-
     get markerLegend() {
-      return this.lineChartWrapper.select('.marker-legend')
+      return select('.marker-legend')
     }
 
     updateMarkerDate(dateLabel:string, positionX:number):void {
       this.markerDate!.style("opacity", 1)
-          .style("left", `${ positionX + this.margins.left - this.markerDate!.node()!.clientWidth / 2 }px`)
+          .style("left", `${ positionX - this.markerDate!.node()!.clientWidth / 2 }px`)
           .style("margin-top", `-${this.margins.bottom}px`)
           .html(this.formatTick(dateLabel));
     }
 
     updateMarkerLegend(indexFound:number, positionX:number):void {
-      const markerLegend = select(".marker-legend")
-
-      markerLegend
+      this.markerLegend
           .style('opacity', 1)
-          .style("top", `${this.svg.attr("height") / 2}px`);
+          .style("top", `${this.size.height / 2}px`);
 
       let positionLeft: string
 
       if (indexFound < this.data.labels.length / 2) {
-        positionLeft = `${positionX + this.margins.left + this.margins.right}px`
+        positionLeft = `${positionX}px`
       } else {
-        positionLeft = `${ positionX + this.margins.right - (markerLegend.node() as any).clientWidth }px`
+        positionLeft = `${ positionX - (this.markerLegend.node() as any).clientWidth}px`
       }
 
-      markerLegend.style("left", positionLeft);
+      this.markerLegend.style("left", positionLeft);
     }
 
     updateSelectedValues(data):void {
@@ -326,11 +326,11 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         this.setLines();
 
         this.extent = [
-            [0, 0],
-            [
-                this.size.width - this.margins.right,
-                this.size.height - this.margins.top,
-            ],
+          [this.margins.left, this.margins.top],
+          [
+            this.size.width - this.margins.right,
+            this.size.height - this.margins.top,
+          ],
         ];
 
         this.selectedInfos.values = this.data.series.map((s, i) => ({
@@ -349,6 +349,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .on("dblclick.zoom", null)
 
        window.addEventListener("resize", this.onResize);
+
     }
 }
 </script>

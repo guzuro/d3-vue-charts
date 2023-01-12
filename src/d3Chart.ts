@@ -31,7 +31,7 @@ export default class D3Chart extends Vue {
         top: 10,
         bottom: 30,
         left: 35,
-        right: 20,
+        right: 35,
     };
 
     get containerHeight(): number {
@@ -85,14 +85,6 @@ export default class D3Chart extends Vue {
             this.svg = this.chartRoot
                 .append("svg")
                 .attr("class", `chart-${chartType}`);
-
-            this.svgGroup = this.svg
-                .append("g")
-                .attr("class", `chart-margin-${chartType}`)
-                .attr(
-                    "transform",
-                    `translate(${this.margins.left}, ${this.margins.top})`
-                );
         }
     }
 
@@ -101,22 +93,10 @@ export default class D3Chart extends Vue {
             this.svg
                 .attr(
                     "viewBox",
-                    `0 0 ${
-                        this.size.width + this.margins.left + this.margins.right
-                    } ${
-                        this.size.height +
-                        this.margins.top +
-                        this.margins.bottom
-                    }`
+                    `0 0 ${ this.size.width } ${ this.size.height }`
                 )
-                .attr(
-                    "width",
-                    this.size.width + this.margins.left + this.margins.right
-                )
-                .attr(
-                    "height",
-                    this.size.height + this.margins.top + this.margins.bottom
-                );
+
+            this.setDefaultClipPath()
         }
     }
 
@@ -154,15 +134,24 @@ export default class D3Chart extends Vue {
 
     }
 
+    setDefaultClipPath() {
+        this.svg.append("defs").append("svg:clipPath")
+            .attr("id", "clip")
+            .append("svg:rect")
+            .attr("width", this.size.width)
+            .attr("height", this.size.height)
+            .attr("x", this.margins.left)
+            .attr("y", 0);
+    }
+
     setSizes(): void {
         if (this.chartRoot) {
             const node = this.chartRoot.node() as HTMLDivElement;
 
             if (node) {
                 this.size.width =
-                    node.offsetWidth - this.margins.left - this.margins.right;
-                this.size.height =
-                    node.offsetHeight - this.margins.top - this.margins.bottom;
+                    node.offsetWidth;
+                this.size.height = this.options.chart.height;
             }
         }
     }
