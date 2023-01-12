@@ -85,6 +85,10 @@ export default class ColumnChart extends Mixins(D3Chart) {
         return null;
     }
 
+    get columnTooltip() {
+        return select(".column-chart__tooltip")
+    }
+
     setChartAxis(): void {
         const axisGroup = this.svgGroup
             .append("g")
@@ -155,6 +159,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .on("mouseleave", this.mouseleave);
     }
 
+
     mouseover(_: MouseEvent, d: any) {
         const tooltip = new ChartTooltip({
             propsData: {
@@ -163,22 +168,33 @@ export default class ColumnChart extends Mixins(D3Chart) {
             },
         }).$mount();
 
-        select(".column-chart__tooltip")
+
+        this.columnTooltip
             .html(tooltip.$el.outerHTML)
             .style("opacity", 1)
             .style('pointer-events', 'none');
     }
 
     mousemove(e: MouseEvent) {
-        const [x, y] = pointer(e, this.svg);
+      const [x, y] = pointer(e, this.svg);
 
-        select(".column-chart__tooltip")
-            .style("left", x + 10 + "px")
-            .style("top", y - this.margins.top - this.margins.bottom + "px");
+      let leftPosition = x
+
+      const tooltipBounding = (this.columnTooltip.node() as HTMLElement).getBoundingClientRect();
+      const offset = x + tooltipBounding.width
+      const screen = window.innerWidth
+
+      if (offset > screen + 8) {
+        leftPosition = screen - tooltipBounding.width - this.margins.right
+      }
+
+      this.columnTooltip
+          .style("top", y - this.margins.top - this.margins.bottom + "px")
+          .style("left",  leftPosition+ "px");
     }
 
     mouseleave() {
-        select(".column-chart__tooltip").style("opacity", 0);
+      this.columnTooltip.style("opacity", 0);
     }
 
     onResize(): void {
@@ -220,7 +236,6 @@ export default class ColumnChart extends Mixins(D3Chart) {
               e.transform.applyX(d)
           )
       );
-
 
       this.svg
           .selectAll(".column-chart__group")
