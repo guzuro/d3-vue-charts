@@ -1,7 +1,7 @@
-import { select, selectAll } from 'd3'
+import {select, selectAll} from 'd3'
 import Vue from "vue";
 import Component from "vue-class-component";
-import { Prop } from "vue-property-decorator";
+import {Prop} from "vue-property-decorator";
 import mapData from "./logic/mapData";
 import dayjs from 'dayjs'
 
@@ -45,7 +45,7 @@ export default class D3Chart extends Vue {
     }
 
     private get setIdsToSeries(): any {
-        const { series, labels } = this.data;
+        const {series, labels} = this.data;
         const modifiedSeries = series.map((s) => ({
             ...s,
             id: Math.random(),
@@ -73,11 +73,33 @@ export default class D3Chart extends Vue {
         return mapData(this.setIdsToSeries, this.options.colors);
     }
 
+    initialiseMargins(): void {
+        const yAxisVisible = this.options.yAxis.visible
+        const xAxisVisible = this.options.xAxis.visible
+        const userMargins = this.options.margins
+
+        if (!xAxisVisible) {
+            this.$set(this.margins, 'bottom', 5)
+        }
+
+        if (!yAxisVisible) {
+            this.$set(this.margins, 'left', 5)
+            this.$set(this.margins, 'right', 5)
+        }
+
+        if (userMargins) {
+            Object.entries(userMargins).forEach(([marginSide, value]) => {
+                this.$set(this.margins, marginSide, value)
+            })
+        }
+    }
+
     initData(wrapper: D3SelectionArgs, chartType: string): void {
         this.chartRoot = select(wrapper);
 
         this.setSizes();
         this.setChartDom(chartType);
+        this.initialiseMargins()
     }
 
     setChartDom(chartType: string): void {
@@ -93,7 +115,7 @@ export default class D3Chart extends Vue {
             this.svg
                 .attr(
                     "viewBox",
-                    `0 0 ${ this.size.width } ${ this.size.height }`
+                    `0 0 ${this.size.width} ${this.size.height}`
                 )
 
             this.setDefaultClipPath()
@@ -121,7 +143,7 @@ export default class D3Chart extends Vue {
         }
     }
 
-    labelsByWidth(labels:Array<any>):Array<any> {
+    labelsByWidth(labels: Array<any>): Array<any> {
         if (this.size.width < 576) {
             return labels.filter((l, i) => i % 3 === 0)
         }
