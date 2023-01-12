@@ -4,6 +4,7 @@ import Component from "vue-class-component";
 import {Prop} from "vue-property-decorator";
 import mapData from "./logic/mapData";
 import dayjs from 'dayjs'
+import {Guid} from "guid-typescript";
 
 type MarginSides = "top" | "bottom" | "left" | "right";
 type D3SelectionReturnType = ReturnType<typeof select>;
@@ -20,8 +21,6 @@ export default class D3Chart extends Vue {
 
     svg: any | null = null;
 
-    svgGroup: any | null = null;
-
     size: Record<Sizes, number> = {
         width: 600,
         height: 400,
@@ -33,6 +32,8 @@ export default class D3Chart extends Vue {
         left: 35,
         right: 35,
     };
+
+    GUID = Guid.create().toString()
 
     get containerHeight(): number {
         return this.options.chart.height;

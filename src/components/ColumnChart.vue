@@ -11,7 +11,7 @@
                 height: `${containerHeight}px`,
             }"
         >
-            <div v-if="tooltipEnabled" class="column-chart__tooltip"/>
+            <div v-if="tooltipEnabled" :class="`column-chart__tooltip column-chart__tooltip-${GUID}`"/>
         </div>
         <chart-tooltip
             v-if="options.legend"
@@ -82,7 +82,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     get columnTooltip() {
-        return select(".column-chart__tooltip")
+        return select(`.column-chart__tooltip-${this.GUID}`)
     }
 
     setChartAxis(): void {
@@ -194,21 +194,22 @@ export default class ColumnChart extends Mixins(D3Chart) {
         }
     }
 
-    mousemove(e: MouseEvent) {
+    mousemove(e: MouseEvent, d:any) {
         const [x, y] = pointer(e, this.svg);
 
         let leftPosition = x
-
         const tooltipBounding = (this.columnTooltip.node() as HTMLElement).getBoundingClientRect();
         const offset = x + tooltipBounding.width
         const screen = window.innerWidth
+
+        const qweY = Math.round(this.yScale(d.value)) - tooltipBounding.height
 
         if (offset > screen) {
             leftPosition = screen - tooltipBounding.width - 60
         }
 
         this.columnTooltip
-            .style("top", y - 120 + "px")
+            .style("top", qweY + "px")
             .style("left", leftPosition + "px");
     }
 
@@ -315,9 +316,9 @@ export default class ColumnChart extends Mixins(D3Chart) {
 <style lang="scss">
 .column-chart {
     &__bar {
-        &:hover {
-            opacity: 0.6;
-        }
+        //&:hover {
+        //    opacity: 0.6;
+        //}
     }
 
     &__tooltip {
