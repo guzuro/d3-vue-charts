@@ -18,9 +18,9 @@
         />
         </div>
       <chart-tooltip
+          v-if="options.legend"
           key="legend"
           class="large-legend"
-          v-if="options.legend"
           :infos="selectedInfos.values"
           @infoClick="toggleSelectedLegendName"
       />
@@ -285,26 +285,36 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     updateSelectedValues(data):void {
-      this.$set(this.selectedInfos, 'header', data.label)
+      this.$set(this.selectedInfos, 'header', this.formatTick(data.label))
       this.selectedInfos.values = this.chartData.filter((cd) => cd.label === data.label)
     }
 
     onMousemove(e: MouseEvent): void {
-        const label = this.xScale.invert(e.pageX - this.margins.left);
+        const label = this.xScale.invert(e.pageX);
 
         const nearestIndex = this.bisect.center(this.chartData, label);
         const nearestIndexData = this.chartData[nearestIndex];
 
         const x = this.xScaleValue(nearestIndexData);
-
-        this.markerLine
-            .style("opacity", 1)
-            .attr("x1", x)
-            .attr("x2", x)
-
         this.updateSelectedValues(nearestIndexData)
-        this.updateMarkerDate(nearestIndexData.label, x)
-        this.updateMarkerLegend(nearestIndex, x)
+
+
+        if (this.options.marker ?? true) {
+            if (this.options.marker?.line ?? true) {
+                this.markerLine
+                    .style("opacity", 1)
+                    .attr("x1", x)
+                    .attr("x2", x)
+            }
+
+            if (this.options.marker?.date ?? true) {
+                this.updateMarkerDate(nearestIndexData.label, x)
+            }
+
+            if (this.options.marker?.legend ?? true) {
+                this.updateMarkerLegend(nearestIndex, x)
+            }
+        }
     }
 
     onMouseleave(): void {
@@ -355,11 +365,6 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 </script>
 
 <style lang="scss">
-* {
-  font-family: Montserrat, Helvetica, Arial, sans-serif;
-  font-weight: 500;
-}
-
 .line-chart {
 
     &__marker {
