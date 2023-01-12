@@ -4,14 +4,17 @@
         <button @click="zoomOut">-</button>
 
         <div
-            class="column-chart"
+            :class="`column-chart column-chart-${GUID}`"
             ref="columnChart"
             :style="{
                 position: 'relative',
                 height: `${containerHeight}px`,
             }"
         >
-            <div v-if="tooltipEnabled" :class="`column-chart__tooltip column-chart__tooltip-${GUID}`"/>
+            <div
+                v-if="tooltipEnabled"
+                :class="`column-chart__tooltip column-chart__tooltip-${GUID}`"
+            />
         </div>
         <chart-tooltip
             v-if="options.legend"
@@ -24,7 +27,7 @@
 <script lang="ts">
 import D3Chart from "../d3Chart";
 
-import {Component, Mixins} from "vue-property-decorator";
+import { Component, Mixins } from "vue-property-decorator";
 import {
     axisBottom,
     axisLeft,
@@ -57,7 +60,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
     get groups() {
         return this.svg
-            .append('g')
+            .append("g")
             .attr("clip-path", "url(#clip)")
             .selectAll(".chart__bar-group")
             .data(this.data.labels);
@@ -82,7 +85,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     get columnTooltip() {
-        return select(`.column-chart__tooltip-${this.GUID}`)
+        return select(`.column-chart__tooltip-${this.GUID}`);
     }
 
     setChartAxis(): void {
@@ -109,10 +112,15 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
         if (xAxisOption && xAxisOption.visible) {
             this.xAxis
-                .attr("transform", `translate(0,${this.size.height - this.margins.bottom})`)
+                .attr(
+                    "transform",
+                    `translate(0,${this.size.height - this.margins.bottom})`
+                )
                 .call(
-                    axisBottom(this.xScale)
-                        .tickValues(this.labelsByWidth(this.data.labels)));
+                    axisBottom(this.xScale).tickValues(
+                        this.labelsByWidth(this.data.labels)
+                    )
+                );
         }
     }
 
@@ -133,17 +141,17 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     barFillColor(d: any) {
-        const highlight = this.options.highlight
+        const highlight = this.options.highlight;
 
         if (highlight) {
             if (highlight.keys.includes(d.label)) {
-                return highlight.color
+                return highlight.color;
             }
 
-            return d.color
+            return d.color;
         }
 
-        return d.color
+        return d.color;
     }
 
     setChartData() {
@@ -166,23 +174,26 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .attr("id", (d: any) => d.id)
             .attr(
                 "height",
-                (d: any) => this.size.height - this.margins.bottom - +this.yScale(d.value)
+                (d: any) =>
+                    this.size.height -
+                    this.margins.bottom -
+                    +this.yScale(d.value)
             )
             .on("mouseover", this.mouseover)
             .on("mousemove", this.mousemove)
             .on("mouseleave", this.mouseleave);
     }
 
-    get tooltipEnabled():boolean {
-        return this.options.tooltip ?? true
+    get tooltipEnabled(): boolean {
+        return this.options.tooltip ?? true;
     }
 
     mouseover(_: MouseEvent, d: any) {
         const tooltip = new ChartTooltip({
             propsData: {
                 header: d.label,
-                infos: [{...d}],
-                mode: 'slim'
+                infos: [{ ...d }],
+                mode: "slim",
             },
         }).$mount();
 
@@ -190,26 +201,28 @@ export default class ColumnChart extends Mixins(D3Chart) {
             this.columnTooltip
                 .html(tooltip.$el.outerHTML)
                 .style("opacity", 1)
-                .style('pointer-events', 'none');
+                .style("pointer-events", "none");
         }
     }
 
-    mousemove(e: MouseEvent, d:any) {
-        const [x, y] = pointer(e, this.svg);
+    mousemove(e: MouseEvent) {
+        const [x, y] = pointer(e, this.svg.node());
 
-        let leftPosition = x
-        const tooltipBounding = (this.columnTooltip.node() as HTMLElement).getBoundingClientRect();
-        const offset = x + tooltipBounding.width
-        const screen = window.innerWidth
+        let leftPosition = x;
 
-        const qweY = Math.round(this.yScale(d.value)) - tooltipBounding.height
+        const { height, width } = (
+            this.columnTooltip.node() as HTMLElement
+        ).getBoundingClientRect();
+
+        const offset = x + width;
+        const screen = window.innerWidth - this.margins.right;
 
         if (offset > screen) {
-            leftPosition = screen - tooltipBounding.width - 60
+            leftPosition = screen - width;
         }
 
         this.columnTooltip
-            .style("top", qweY + "px")
+            .style("top", y - height + "px")
             .style("left", leftPosition + "px");
     }
 
@@ -234,7 +247,10 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .attr("width", this.xScaleBars.bandwidth())
             .attr(
                 "height",
-                (d: any) => this.size.height - this.margins.bottom - +this.yScale(d.value)
+                (d: any) =>
+                    this.size.height -
+                    this.margins.bottom -
+                    +this.yScale(d.value)
             );
     }
 
@@ -271,13 +287,13 @@ export default class ColumnChart extends Mixins(D3Chart) {
         if (e.transform.k > 1.5) {
             this.svg.select(".chart-axis-group-x").call(this.setAxis);
             this.xAxis.call(
-                axisBottom(this.xScale)
-                    .tickValues(this.data.labels)
+                axisBottom(this.xScale).tickValues(this.data.labels)
             );
         } else {
             this.xAxis.call(
-                axisBottom(this.xScale)
-                    .tickValues(this.labelsByWidth(this.data.labels))
+                axisBottom(this.xScale).tickValues(
+                    this.labelsByWidth(this.data.labels)
+                )
             );
         }
     }
