@@ -61,7 +61,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
     get groups() {
         return this.svg
             .append("g")
-            .attr("clip-path", "url(#clip)")
+            .attr("clip-path", `url(#${this.GUID})`)
             .selectAll(".chart__bar-group")
             .data(this.data.labels);
     }
