@@ -8,7 +8,7 @@
                 v-for="info in infos"
                 :key="info.name"
                 class="list__item item"
-                @click="infoClick(info.id)"
+                @click="handleInfoClick(info.id)"
             >
                 <div
                     class="item__color"
@@ -56,6 +56,12 @@ export default class extends Vue {
                 gap: "2px",
                 "flex-direction": "column",
             };
+        }
+    }
+
+    handleInfoClick(id: number): void {
+        if (this.infos.length > 1) {
+            this.infoClick(id);
         }
     }
 
