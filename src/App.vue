@@ -2,8 +2,11 @@
     <div id="app">
         ColumnChart
         <ColumnChart :options="columnOptions" :data="data" />
+        ColumnChart
+        <ColumnChart :options="columnOptionsTwo" :data="dataTwo" />
 
-<div style="margin-top: 100px">
+
+        <div style="margin-top: 20px">
         LineChart
         <LineChart :options="columnOptions" :data="data" />
 </div>
@@ -22,26 +25,10 @@ import LineChart from "./components/LineChart.vue";
     },
 })
 export default class App extends Vue {
-    columnOptions = {
-        chart: {
-            height: 300,
-            zoom: true,
-        },
-        xAxis: {
-            visible: true,
-            format: "DD.MM.YY",
-        },
-        yAxis: {
-            visible: true,
-        },
-        legend: true,
-        colors: ["indigo", "blue", "green", "brown"],
-    };
-
     data = {
         series: [
             {
-                name: "1111111111",
+                name: "111as das das dasdasd asd asd as dasd 1111111",
                 data: [
                     59, 98, 5, 88, 69, 46, 16, 68, 15, 59, 98,
                     // 5, 88, 69, 46,
@@ -54,6 +41,14 @@ export default class App extends Vue {
                     36, 100, 73, 77, 60, 3, 29, 98, 24, 36, 100,
                     // 73, 77, 60, 3,
                     // 29, 98, 24, 29, 98, 24,
+                ],
+            },
+            {
+                name: "12312312 12asd jakshdjka asdjhaskjdh",
+                data: [
+                    // 36, 100, 73, 77, 60, 3, 29, 98, 24, 36, 100,
+                    73, 77, 60, 3,
+                    29, 98, 24, 29, 98, 24, 9
                 ],
             },
             // {
@@ -85,6 +80,69 @@ export default class App extends Vue {
             // "2023-01-21",
         ],
     };
+
+    dataTwo = {
+        series: [
+            {
+                name: "Активность",
+                data: [
+                    59, 98, 5, 88, 69, 46, 16,
+                ],
+            },
+        ],
+        labels: [
+            "Пн",
+            "Вт",
+            "Ср",
+            "Чт",
+            "Пт",
+            "Сб",
+            "Вс",
+        ],
+    };
+
+    columnOptionsTwo = {
+        chart: {
+            height: 400,
+            zoom: true,
+        },
+        xAxis: {
+            visible: true,
+            format: "MMM DD",
+        },
+        yAxis: {
+            visible: true,
+        },
+        legend: true,
+        colors: ["indigo", "blue", "green", "brown"],
+        highlight: {
+            keys: [...this.dataTwo.labels.slice(-1), ...this.dataTwo.labels.slice(-2)],
+            color: 'red'
+        },
+    };
+
+
+
+    columnOptions = {
+        chart: {
+            height: 400,
+            zoom: true,
+        },
+        xAxis: {
+            visible: true,
+            format: "MMM DD",
+        },
+        yAxis: {
+            visible: true,
+        },
+        legend: true,
+        colors: ["indigo", "blue", "green", "brown"],
+        highlight: {
+            keys: [...this.data.labels.slice(-1), ...this.data.labels.slice(-2)],
+            color: 'red'
+        },
+    };
+
 }
 </script>
 
