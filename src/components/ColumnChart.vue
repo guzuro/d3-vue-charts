@@ -332,9 +332,9 @@ export default class ColumnChart extends Mixins(D3Chart) {
 <style lang="scss">
 .column-chart {
     &__bar {
-        //&:hover {
-        //    opacity: 0.6;
-        //}
+        &:hover {
+            opacity: 0.6;
+        }
     }
 
     &__tooltip {
