@@ -1,15 +1,9 @@
 <template>
     <div class="tooltip">
-        <small
-            v-if="header"
-            class="tooltip__header"
-        >
+        <small v-if="header" class="tooltip__header">
             {{ header }}
         </small>
-        <div
-            class="tooltip__data list"
-            :style="listStyles"
-        >
+        <div class="tooltip__data list" :style="listStyles">
             <div
                 v-for="info in infos"
                 :key="info.name"
@@ -20,17 +14,19 @@
                     class="item__color"
                     :style="{
                         backgroundColor: info.color,
-                        opacity: activeIds.includes(info.id) ? '0.4' : '1'
+                        opacity: activeIds.includes(info.id) ? '0.4' : '1',
                     }"
                 />
-                <small class="item__value"> {{ legendItem(info.name, info.value) }}</small>
+                <small class="item__value">
+                    {{ legendItem(info.name, info.value) }}</small
+                >
             </div>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import {Component, Emit, Prop, Vue} from "vue-property-decorator";
+import { Component, Emit, Prop, Vue } from "vue-property-decorator";
 
 @Component
 export default class extends Vue {
@@ -38,57 +34,57 @@ export default class extends Vue {
 
     @Prop() infos!: any[];
 
-    @Prop({type: String, default: 'full'}) mode!: 'full' | 'slim'
+    @Prop({ type: String, default: "full" }) mode!: "full" | "slim";
 
-    @Emit('infoClick')
+    @Emit("infoClick")
     infoClick(id: number) {
-        this.updateActiveIds(id)
+        this.updateActiveIds(id);
 
-        return id
+        return id;
     }
 
-    activeIds: number[] = []
+    activeIds: number[] = [];
 
     get listStyles(): Record<string, string> {
-        if (this.mode === 'full') {
+        if (this.mode === "full") {
             return {
-                'gap': '5px',
-                'flex-direction': 'row'
-            }
+                gap: "5px",
+                "flex-direction": "row",
+            };
         } else {
             return {
-                'gap': '2px',
-                'flex-direction': 'column'
-            }
+                gap: "2px",
+                "flex-direction": "column",
+            };
         }
     }
 
-    updateActiveIds(id:number):void {
-        const activeItemIndex = this.activeIds.indexOf(id)
+    updateActiveIds(id: number): void {
+        const activeItemIndex = this.activeIds.indexOf(id);
 
         if (activeItemIndex !== -1) {
-            this.activeIds.splice(activeItemIndex, 1)
+            this.activeIds.splice(activeItemIndex, 1);
         } else {
-            this.activeIds.push(id)
+            this.activeIds.push(id);
         }
     }
 
     legendItem(name: string, value: string | undefined): string {
-        let resultString = `${this.sliceName(name)}`
+        let resultString = `${this.sliceName(name)}`;
 
         if (value) {
             if (this.mode) {
-                resultString += ': '
+                resultString += ": ";
             }
 
-            resultString += value
+            resultString += value;
         }
 
-        return resultString
+        return resultString;
     }
 
     sliceName(str: string): string {
-        if (this.mode === 'slim' && str.length > 15) {
+        if (this.mode === "slim" && str.length > 15) {
             return str.slice(0, 14) + "...";
         }
 
