@@ -1,34 +1,36 @@
 <template>
     <div class="tooltip">
-        <small v-if="header" class="tooltip__header">
+        <small
+            v-if="header"
+            class="tooltip__header"
+        >
             {{ header }}
         </small>
-        <div class="tooltip__data list">
+        <div
+            class="tooltip__data list"
+            :style="listStyles"
+        >
             <div
                 v-for="info in infos"
                 :key="info.name"
                 class="list__item item"
-                @click="$emit('infoClick', info.id)"
+                @click="infoClick(info.id)"
             >
-                <!-- <template v-if="infos.length > 1"> -->
                 <div
                     class="item__color"
                     :style="{
                         backgroundColor: info.color,
+                        opacity: activeIds.includes(info.id) ? '0.4' : '1'
                     }"
                 />
-                <small class="item__value">{{ sliceName(info.name) }}:</small>
-                <!-- </template> -->
-                <small v-if="info.value" class="item__value">{{
-                    ` ${info.value}`
-                }}</small>
+                <small class="item__value"> {{ legendItem(info.name, info.value) }}</small>
             </div>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import {Component, Emit, Prop, Vue} from "vue-property-decorator";
 
 @Component
 export default class extends Vue {
@@ -36,8 +38,55 @@ export default class extends Vue {
 
     @Prop() infos!: any[];
 
+    @Prop({type: String, default: 'full'}) mode!: 'full' | 'slim'
+
+    @Emit('infoClick')
+    infoClick(id: number) {
+        this.updateActiveIds(id)
+
+        return id
+    }
+
+    activeIds: number[] = []
+
+    get listStyles(): Record<string, string> {
+        if (this.mode === 'full') {
+            return {
+                'flex-direction': 'row'
+            }
+        } else {
+            return {
+                'flex-direction': 'column'
+            }
+        }
+    }
+
+    updateActiveIds(id:number):void {
+        const activeItemIndex = this.activeIds.indexOf(id)
+
+        if (activeItemIndex !== -1) {
+            this.activeIds.splice(activeItemIndex, 1)
+        } else {
+            this.activeIds.push(id)
+        }
+    }
+
+    legendItem(name: string, value: string | undefined): string {
+        let resultString = `${this.sliceName(name)}`
+
+        if (value) {
+            if (this.mode) {
+                resultString += ': '
+            }
+
+            resultString += value
+        }
+
+        return resultString
+    }
+
     sliceName(str: string): string {
-        if (str.length > 15) {
+        if (this.mode === 'slim' && str.length > 15) {
             return str.slice(0, 14) + "...";
         }
 
@@ -63,10 +112,11 @@ export default class extends Vue {
 
 .list {
     display: flex;
-    flex-direction: column;
     flex-wrap: wrap;
+    gap: 5px;
+    justify-content: space-around;
+
     &__item {
-        flex: 1 0 33%;
         padding: 2px;
         display: flex;
         align-items: center;
@@ -75,7 +125,7 @@ export default class extends Vue {
 
 .item {
     &__color {
-        width: 10px;
+        min-width: 10px;
         height: 10px;
         border-radius: 50%;
     }
