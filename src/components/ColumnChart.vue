@@ -1,5 +1,8 @@
 <template>
     <div>
+        <button @click="zoomIn">+</button>
+        <button @click="zoomOut">-</button>
+
         <div
             class="column-chart"
             ref="columnChart"
@@ -8,10 +11,7 @@
                 height: `${containerHeight}px`,
             }"
         >
-            <button @click="zoomIn">+</button>
-            <button @click="zoomOut">-</button>
-
-            <div class="column-chart__tooltip"/>
+            <div v-if="tooltipEnabled" class="column-chart__tooltip"/>
         </div>
         <chart-tooltip
             v-if="options.legend"
@@ -132,6 +132,20 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .padding(0.05);
     }
 
+    barFillColor(d: any) {
+        const highlight = this.options.highlight
+
+        if (highlight) {
+            if (highlight.keys.includes(d.label)) {
+                return highlight.color
+            }
+
+            return d.color
+        }
+
+        return d.color
+    }
+
     setChartData() {
         const transformedGroups = this.groups
             .enter()
@@ -146,7 +160,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .append("rect")
             .attr("class", "column-chart__bar")
             .attr("x", (d: any) => this.xScaleBars(d.name))
-            .attr("fill", (d: any) => d.color)
+            .attr("fill", this.barFillColor)
             .attr("y", (d: any) => this.yScale(d.value))
             .attr("width", this.xScaleBars.bandwidth())
             .attr("id", (d: any) => d.id)
@@ -159,18 +173,25 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .on("mouseleave", this.mouseleave);
     }
 
+    get tooltipEnabled():boolean {
+        return this.options.tooltip ?? true
+    }
+
     mouseover(_: MouseEvent, d: any) {
         const tooltip = new ChartTooltip({
             propsData: {
                 header: d.label,
                 infos: [{...d}],
+                mode: 'slim'
             },
         }).$mount();
 
-        this.columnTooltip
-            .html(tooltip.$el.outerHTML)
-            .style("opacity", 1)
-            .style('pointer-events', 'none');
+        if (this.tooltipEnabled) {
+            this.columnTooltip
+                .html(tooltip.$el.outerHTML)
+                .style("opacity", 1)
+                .style('pointer-events', 'none');
+        }
     }
 
     mousemove(e: MouseEvent) {
@@ -182,12 +203,12 @@ export default class ColumnChart extends Mixins(D3Chart) {
         const offset = x + tooltipBounding.width
         const screen = window.innerWidth
 
-        if (offset > screen + 8) {
-            leftPosition = screen - tooltipBounding.width - this.margins.right
+        if (offset > screen) {
+            leftPosition = screen - tooltipBounding.width - 60
         }
 
         this.columnTooltip
-            .style("top", y - this.margins.top - this.margins.bottom + "px")
+            .style("top", y - 120 + "px")
             .style("left", leftPosition + "px");
     }
 
