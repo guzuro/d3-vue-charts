@@ -40,7 +40,7 @@ import {Component, Emit, Mixins, Prop} from "vue-property-decorator";
 import D3Chart from "../d3Chart";
 import formatNumber from "../logic/formatNumber";
 import ChartTooltip from "@/components/ChartTooltip.vue";
-import { select } from "d3";
+import {pointer, select} from "d3";
 import {LineChartOptions} from "@/types/LineOptions";
 
 @Component({
@@ -325,7 +325,9 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     onMousemove(e: MouseEvent): void {
-        const label = this.xScale.invert(e.pageX);
+        const [ posX, _ ] = pointer(e)
+        const label = this.xScale.invert(posX);
+
         const optionsMarker = this.options.marker
 
         const nearestIndex = this.bisect.center(this.chartData, label);
