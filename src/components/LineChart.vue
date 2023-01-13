@@ -264,14 +264,10 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .attr("clip-path", "url(#clip)")
             .selectAll("circle")
             .append("g")
-            .data(this.chartData)
+            .data(this.data.series)
             .enter()
             .append("circle")
             .attr("class", "chart_circle")
-            .attr("r", (d) => (d.value !== null ? 3 : 0))
-            .attr("cx", this.xScaleValue)
-            .attr("cy", (d) => this.yScale(d.value))
-            .attr("fill", (d) => d.color);
     }
 
     onResize(): void {
@@ -338,6 +334,16 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         const x = this.xScaleValue(nearestIndexData);
         this.updateSelectedValues(nearestIndexData);
 
+        const items = this.chartData.filter(cd => cd.label === nearestIndexData.label)
+
+        this.svg
+            .selectAll('circle')
+            .data(items)
+            .attr("r", (d) => d.value !== null ? 3 : 0)
+            .attr("cx", this.xScaleValue)
+            .attr("cy", (d) => this.yScale(d.value))
+            .attr("fill", (d) => d.color);
+
         if (optionsMarker ?? true) {
             if (optionsMarker?.line ?? true) {
                 this.markerLine.style("opacity", 1).attr("x1", x).attr("x2", x);
@@ -357,6 +363,10 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         this.markerDate!.style("opacity", 0);
         this.markerLine.style("opacity", 0);
         this.markerLegend.style("opacity", 0);
+
+        this.svg
+            .selectAll('circle')
+            .attr("r", 0)
     }
 
     mounted(): void {
