@@ -106,12 +106,18 @@ export default class ColumnChart extends Mixins(D3Chart) {
     setAxis(): void {
         const xAxisOption = this.options.xAxis;
         const yAxisOption = this.options.yAxis;
+        //todo
+        const evenLabels = this.data.labels.filter((d, i, arr) =>
+            arr.length > 15 ? i % 2 === 0 : true
+        );
 
         if (yAxisOption && yAxisOption.visible) {
             this.yAxis
-                .attr("transform", `translate(${this.margins.left},0)`)
+                .attr("transform", `translate(${ this.margins.left },0)`)
                 .call(
-                    axisLeft(this.yScale).tickFormat((t, i) => formatNumber(t))
+                    axisLeft(this.yScale)
+                        .tickFormat((d) =>
+                            this.formatterYaxis(formatNumber(d)))
                 );
         }
 
@@ -119,14 +125,34 @@ export default class ColumnChart extends Mixins(D3Chart) {
             this.xAxis
                 .attr(
                     "transform",
-                    `translate(0,${this.size.height - this.margins.bottom})`
+                    `translate(0,${ this.size.height - this.margins.bottom })`
                 )
                 .call(
-                    axisBottom(this.xScale).tickValues(
-                        this.labelsByWidth(this.data.labels)
-                    )
+                    axisBottom(this.xScale)
+                        .tickValues(this.labelsByWidth(evenLabels))
+                        .tickFormat(this.formatterXaxis)
                 );
         }
+    }
+
+    formatterXaxis(d:string):any {
+        const xAxisInfo = this.options.xAxis
+
+        if (xAxisInfo && typeof xAxisInfo.formatter === 'function') {
+            return xAxisInfo.formatter(d)
+        }
+
+        return d
+    }
+
+    formatterYaxis(d:string):any {
+        const yAxisInfo = this.options.yAxis
+
+        if (yAxisInfo && typeof yAxisInfo.formatter === 'function') {
+            return yAxisInfo.formatter(d)
+        }
+
+        return d
     }
 
     setScales(): void {
