@@ -234,6 +234,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .attr("stroke-width", this.lineStrokeWidth)
             .attr('stroke-dasharray', this.lineStrokeDashArray)
             .attr("class", "path")
+            .style('fill', 'none')
 
         this.setDots();
     }
@@ -428,9 +429,6 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         position: absolute;
         font-size: 11.5px;
     }
-}
-path {
-    fill: none;
 }
 
 .marker-legend {
