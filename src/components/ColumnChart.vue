@@ -5,7 +5,7 @@
             <button @click="zoomOut">-</button>
         </template>
         <div
-            class="column-chart"
+            :class="`column-chart column-chart-${GUID}`"
             ref="columnChart"
             :style="{
                 position: 'relative',
@@ -209,9 +209,13 @@ export default class ColumnChart extends Mixins(D3Chart) {
                 .style("pointer-events", "none");
         }
     }
+    get container() {
+        return select(`.column-chart-${ this.GUID }`);
+    }
+
 
     mousemove(e: MouseEvent) {
-        const [x, y] = pointer(e, this.svg.node());
+        const [ x, y ] = pointer(e, this.svg.node());
 
         let leftPosition = x;
 
@@ -219,11 +223,10 @@ export default class ColumnChart extends Mixins(D3Chart) {
             this.columnTooltip.node() as HTMLElement
         ).getBoundingClientRect();
 
-        const offset = x + width;
-        const screen = window.innerWidth - this.margins.right;
+        const { width: cWidth, } = (this.container.node() as HTMLElement).getBoundingClientRect()
 
-        if (offset > screen) {
-            leftPosition = screen - width;
+        if (x + width > cWidth) {
+            leftPosition = x - width;
         }
 
         this.columnTooltip
