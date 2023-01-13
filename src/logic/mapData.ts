@@ -1,8 +1,10 @@
-const mapData = (data: any, colors: string[]) => {
+import {ChartDataWithId} from "@/types/BaseTypes";
+
+const mapData = (data: ChartDataWithId, colors: Array<string>) => {
     const { labels, series } = data;
 
-    const a = series.map((s: any, i: number) => {
-        return s.data.map((v: any, j: number) => {
+    const a = series.map((s, i: number) => {
+        return s.data.map((v, j: number) => {
             return {
                 id: s.id,
                 name: s.name,

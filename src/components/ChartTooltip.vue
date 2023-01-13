@@ -27,12 +27,13 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from "vue-property-decorator";
+import {ChartTooltipItem} from "@/types/BaseTypes";
 
 @Component
 export default class extends Vue {
     @Prop() header!: string;
 
-    @Prop() infos!: any[];
+    @Prop() infos!: Array<ChartTooltipItem>;
 
     @Prop({ type: String, default: "full" }) mode!: "full" | "slim";
 

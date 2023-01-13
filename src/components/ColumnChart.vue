@@ -1,8 +1,9 @@
 <template>
     <div>
-        <button @click="zoomIn">+</button>
-        <button @click="zoomOut">-</button>
-
+        <template v-if="options.chart.zoom">
+            <button @click="zoomIn">+</button>
+            <button @click="zoomOut">-</button>
+        </template>
         <div
             class="column-chart"
             ref="columnChart"
@@ -27,7 +28,7 @@
 <script lang="ts">
 import D3Chart from "../d3Chart";
 
-import { Component, Mixins } from "vue-property-decorator";
+import {Component, Mixins, Prop} from "vue-property-decorator";
 import {
     axisBottom,
     axisLeft,
@@ -39,6 +40,7 @@ import {
 } from "d3";
 import ChartTooltip from "./ChartTooltip.vue";
 import formatNumber from "../logic/formatNumber";
+import {ColumnChartOptions} from "@/types/ColumnOptions";
 
 @Component({
     components: {
@@ -46,6 +48,9 @@ import formatNumber from "../logic/formatNumber";
     },
 })
 export default class ColumnChart extends Mixins(D3Chart) {
+    @Prop() options!: ColumnChartOptions;
+
+
     xScale = scaleBand();
 
     xScaleBars = scaleBand();
@@ -56,7 +61,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
     xAxis: any = null;
 
-    extent: any = [];
+    extent: [[number, number], [number, number]] = [[0,0], [0,0]];
 
     get groups() {
         return this.svg
@@ -132,7 +137,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
         this.yScale
             .range([this.margins.top, this.size.height - this.margins.bottom])
-            .domain([this.maxValueFromOptionsData, 0]);
+            .domain([this.maxValue, 0]);
 
         this.xScaleBars
             .domain(this.seriesGroups)
@@ -143,7 +148,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
     barFillColor(d: any) {
         const highlight = this.options.highlight;
 
-        if (highlight) {
+        if (highlight && highlight.keys) {
             if (highlight.keys.includes(d.label)) {
                 return highlight.color;
             }
@@ -159,22 +164,22 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .enter()
             .append("g")
             .attr("class", "column-chart__group")
-            .attr("transform", (d: any) => `translate(${this.xScale(d)}, 0)`);
+            .attr("transform", (d:string) => `translate(${this.xScale(d)}, 0)`);
 
         transformedGroups
             .selectAll(".column-chart__bar")
-            .data((d: any) => this.chartData.filter((r) => r.label === d))
+            .data((d:string) => this.chartData.filter((r) => r.label === d))
             .enter()
             .append("rect")
             .attr("class", "column-chart__bar")
-            .attr("x", (d: any) => this.xScaleBars(d.name))
+            .attr("x", (d:any) => this.xScaleBars(d.name))
             .attr("fill", this.barFillColor)
-            .attr("y", (d: any) => this.yScale(d.value))
+            .attr("y", (d:any) => this.yScale(d.value))
             .attr("width", this.xScaleBars.bandwidth())
-            .attr("id", (d: any) => d.id)
+            .attr("id", (d:any) => d.id)
             .attr(
                 "height",
-                (d: any) =>
+                (d:any) =>
                     this.size.height -
                     this.margins.bottom -
                     +this.yScale(d.value)
@@ -188,7 +193,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
         return this.options.tooltip ?? true;
     }
 
-    mouseover(_: MouseEvent, d: any) {
+    mouseover(_: MouseEvent, d:any) {
         const tooltip = new ChartTooltip({
             propsData: {
                 header: d.label,
@@ -299,7 +304,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     mounted(): void {
-        this.initData(this.$refs.columnChart as Element, "column");
+        this.initData(this.$refs.columnChart as Element, "column", this.options);
         this.setSizes();
 
         this.setSvgViewBox();

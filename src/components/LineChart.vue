@@ -1,7 +1,9 @@
 <template>
     <div class="line-chart-wrapper" style="position: relative">
-        <button @click="zoomIn">+</button>
-        <button @click="zoomOut">-</button>
+        <template v-if="options.chart.zoom">
+            <button @click="zoomIn">+</button>
+            <button @click="zoomOut">-</button>
+        </template>
         <div
             class="line-chart"
             ref="lineChart"
@@ -34,11 +36,12 @@ import { axisLeft, axisBottom } from "d3-axis";
 import { scaleLinear, scaleTime } from "d3-scale";
 import { zoom } from "d3-zoom";
 
-import { Component, Emit, Mixins } from "vue-property-decorator";
+import {Component, Emit, Mixins, Prop} from "vue-property-decorator";
 import D3Chart from "../d3Chart";
 import formatNumber from "../logic/formatNumber";
 import ChartTooltip from "@/components/ChartTooltip.vue";
 import { select } from "d3";
+import {LineChartOptions} from "@/types/LineOptions";
 
 @Component({
     components: {
@@ -46,6 +49,8 @@ import { select } from "d3";
     },
 })
 export default class extends Mixins<D3Chart>(D3Chart) {
+    @Prop() options!: LineChartOptions;
+
     @Emit("onMove")
     selectedLabel(data: Array<any>): Array<any> {
         return data.map((d) => ({
@@ -114,16 +119,13 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     get zoom() {
-        if (this.options.chart.zoom) {
             return zoom()
                 .scaleExtent([1, 3])
                 .translateExtent(this.extent)
                 .extent(this.extent)
                 .on("zoom", this.zoomed)
                 .on("zoom.mousedown", this.onMouseleave);
-        }
 
-        return null;
     }
 
     setScales(): void {
@@ -133,7 +135,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
         this.yScale
             .range([this.margins.top, this.size.height - this.margins.bottom])
-            .domain([this.maxValueFromOptionsData, 0]);
+            .domain([this.maxValue, 0]);
     }
 
     zoomIn() {
@@ -229,10 +231,31 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .append("path")
             .attr("d", (d) => this.line(d.value))
             .attr("stroke", (d) => d.value[0].color)
-            .attr("stroke-width", 2)
-            .attr("class", "path");
+            .attr("stroke-width", this.lineStrokeWidth)
+            .attr('stroke-dasharray', this.lineStrokeDashArray)
+            .attr("class", "path")
 
         this.setDots();
+    }
+
+    lineStrokeDashArray(_:any, index:number):number {
+        const stroke = this.options.stroke
+
+        if (stroke && stroke.dashArray && stroke.dashArray[index]) {
+            return stroke.dashArray[index]
+        }
+
+        return 0
+    }
+
+    lineStrokeWidth():number {
+        const stroke = this.options.stroke
+
+        if (stroke && stroke.width && stroke.width > 0) {
+            return stroke.width
+        }
+
+        return 2
     }
 
     setDots(): void {
@@ -307,6 +330,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
     onMousemove(e: MouseEvent): void {
         const label = this.xScale.invert(e.pageX);
+        const optionsMarker = this.options.marker
 
         const nearestIndex = this.bisect.center(this.chartData, label);
         const nearestIndexData = this.chartData[nearestIndex];
@@ -314,16 +338,16 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         const x = this.xScaleValue(nearestIndexData);
         this.updateSelectedValues(nearestIndexData);
 
-        if (this.options.marker ?? true) {
-            if (this.options.marker?.line ?? true) {
+        if (optionsMarker ?? true) {
+            if (optionsMarker?.line ?? true) {
                 this.markerLine.style("opacity", 1).attr("x1", x).attr("x2", x);
             }
 
-            if (this.options.marker?.date ?? true) {
+            if (optionsMarker?.date ?? true) {
                 this.updateMarkerDate(nearestIndexData.label, x);
             }
 
-            if (this.options.marker?.legend ?? true) {
+            if (optionsMarker?.legend ?? true) {
                 this.updateMarkerLegend(nearestIndex, x);
             }
         }
@@ -336,7 +360,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     mounted(): void {
-        this.initData(this.$refs.lineChart as Element, "line");
+        this.initData(this.$refs.lineChart as Element, "line", this.options);
         this.setSizes();
 
         this.setSvgViewBox();
@@ -361,15 +385,19 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             value: "-",
         }));
 
+        if (this.options.chart.zoom) {
+            this.svg
+                .call(this.zoom)
+                .on("wheel.zoom", null)
+                .on("wheel.zoom", null)
+                .on("touchend.zoom", null)
+                .on("touchcancel.zoom", null)
+                .on("dblclick.zoom", null);
+        }
+
         this.svg
-            .call(this.zoom)
-            .on("wheel.zoom", null)
             .on("mousemove", this.onMousemove)
             .on("mouseleave", this.onMouseleave)
-            .on("wheel.zoom", null)
-            .on("touchend.zoom", null)
-            .on("touchcancel.zoom", null)
-            .on("dblclick.zoom", null);
 
         window.addEventListener("resize", this.onResize);
     }

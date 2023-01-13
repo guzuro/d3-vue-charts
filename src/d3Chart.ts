@@ -1,23 +1,24 @@
-import { select, selectAll } from "d3";
+import {select, selectAll} from "d3";
 import Vue from "vue";
 import Component from "vue-class-component";
-import { Prop } from "vue-property-decorator";
+import {Prop} from "vue-property-decorator";
 import mapData from "./logic/mapData";
 import dayjs from "dayjs";
-import { Guid } from "guid-typescript";
+import {Guid} from "guid-typescript";
+import {ColumnChartOptions} from "@/types/ColumnOptions";
+import {ChartData, ChartDataWithId, ChartOptions, ChartTooltipItem, MarginSides} from "@/types/BaseTypes";
 
-type MarginSides = "top" | "bottom" | "left" | "right";
 type D3SelectionReturnType = ReturnType<typeof select>;
 type D3SelectionArgs = Parameters<typeof select>[0];
 type Sizes = "width" | "height";
 
 @Component
 export default class D3Chart extends Vue {
-    @Prop() data!: any;
-
-    @Prop() options!: any;
+    @Prop() data!: ChartData;
 
     chartRoot: D3SelectionReturnType | null = null;
+
+    chartOptions: ChartOptions | null = null
 
     svg: any | null = null;
 
@@ -26,7 +27,7 @@ export default class D3Chart extends Vue {
         height: 400,
     };
 
-    margins: Record<MarginSides, number> = {
+    margins: Required<MarginSides> = {
         top: 10,
         bottom: 30,
         left: 35,
@@ -36,17 +37,38 @@ export default class D3Chart extends Vue {
     GUID = Guid.create().toString();
 
     get containerHeight(): number {
-        return this.options.chart.height;
+        if (this.chartOptions) {
+            const chartInfo = this.chartOptions.chart
+
+            return chartInfo.height;
+        } else {
+            return 400
+        }
     }
 
-    get maxValueFromOptionsData(): number {
+    get maxDataSeriesValue():number {
         const allSeriesValues = this.chartData.map((s: any) => s.value);
 
         return (Math.max.apply(null, allSeriesValues) / 100) * 120;
+
     }
 
-    private get setIdsToSeries(): any {
-        const { series, labels } = this.data;
+    get maxValue(): number {
+        if (this.chartOptions) {
+            const yAxisOption = this.chartOptions.yAxis
+
+            if (yAxisOption && yAxisOption.max) {
+                return yAxisOption.max
+            } else {
+                return this.maxDataSeriesValue
+            }
+        }
+
+        return this.maxDataSeriesValue
+    }
+
+    private get setIdsToSeries(): ChartDataWithId {
+        const {series, labels} = this.data;
         const modifiedSeries = series.map((s) => ({
             ...s,
             id: Math.random(),
@@ -58,45 +80,56 @@ export default class D3Chart extends Vue {
         };
     }
 
-    get mappedLegend(): any[] {
-        return this.setIdsToSeries.series.map((s, i) => {
-            const color = this.options.colors[i];
+    get mappedLegend(): Array<ChartTooltipItem> {
+        if (this.chartOptions) {
+            return this.setIdsToSeries.series.map((s, i) => {
+                const color = this.chartOptions!.colors[i];
 
-            return {
-                id: s.id,
-                color: color,
-                name: s.name,
-            };
-        });
+                return {
+                    id: s.id,
+                    color: color,
+                    name: s.name,
+                };
+            });
+        }
+
+        return []
     }
 
-    get chartData(): any[] {
-        return mapData(this.setIdsToSeries, this.options.colors);
+    get chartData() {
+        if (this.chartOptions) {
+            return mapData(this.setIdsToSeries, this.chartOptions.colors);
+        }
+
+        return []
     }
 
     initialiseMargins(): void {
-        const yAxisVisible = this.options.yAxis.visible;
-        const xAxisVisible = this.options.xAxis.visible;
-        const userMargins = this.options.margins;
+        if (this.chartOptions) {
+            const yAxis = this.chartOptions.yAxis;
+            const xAxis = this.chartOptions.xAxis;
+            const userMargins = this.chartOptions.chart.margins;
 
-        if (!xAxisVisible) {
-            this.$set(this.margins, "bottom", 5);
-        }
+            if (yAxis && !yAxis.visible) {
+                this.$set(this.margins, "bottom", 5);
+            }
 
-        if (!yAxisVisible) {
-            this.$set(this.margins, "left", 5);
-            this.$set(this.margins, "right", 5);
-        }
+            if (xAxis && !xAxis.visible) {
+                this.$set(this.margins, "left", 5);
+                this.$set(this.margins, "right", 5);
+            }
 
-        if (userMargins && Object.keys(userMargins).length) {
-            Object.entries(userMargins).forEach(([marginSide, value]) => {
-                this.$set(this.margins, marginSide, value);
-            });
+            if (userMargins && Object.keys(userMargins).length) {
+                Object.entries(userMargins).forEach(([marginSide, value]) => {
+                    this.$set(this.margins, marginSide, value);
+                });
+            }
         }
     }
 
-    initData(wrapper: D3SelectionArgs, chartType: string): void {
+    initData(wrapper: D3SelectionArgs, chartType: string, options:ChartOptions): void {
         this.chartRoot = select(wrapper);
+        this.chartOptions = options
 
         this.setSizes();
         this.setChartDom(chartType);
@@ -122,13 +155,19 @@ export default class D3Chart extends Vue {
     }
 
     formatTick(date: any): string {
-        const format = this.options.xAxis.format;
+        const baseFormat = dayjs(date).format("D MMM")
 
-        if (format) {
-            return dayjs(date).format(format);
+        if (this.chartOptions && this.chartOptions.xAxis && 'format' in this.chartOptions.xAxis) {
+            const format = this.chartOptions.xAxis.format;
+
+            if (format) {
+                return dayjs(date).format(format);
+            }
+
+            return baseFormat;
         }
 
-        return dayjs(date).format("D MMM");
+        return baseFormat;
     }
 
     toggleSelectedLegendName(id): any {
@@ -155,8 +194,6 @@ export default class D3Chart extends Vue {
     }
 
     setDefaultClipPath() {
-        console.log(this.margins.left, "this.margins.left");
-
         this.svg
             .append("defs")
             .append("svg:clipPath")
@@ -169,12 +206,12 @@ export default class D3Chart extends Vue {
     }
 
     setSizes(): void {
-        if (this.chartRoot) {
+        if (this.chartRoot && this.chartOptions) {
             const node = this.chartRoot.node() as HTMLDivElement;
 
             if (node) {
                 this.size.width = node.offsetWidth;
-                this.size.height = this.options.chart.height;
+                this.size.height = this.chartOptions.chart.height;
             }
         }
     }
