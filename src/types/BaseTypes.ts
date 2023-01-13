@@ -14,9 +14,10 @@ export type MarginSides = Partial<{
     right: number
 }>
 
-export type BaseAxis = {
+export type BaseAxis = Partial<{
     visible: boolean
-}
+    formatter: (value:any) => string
+}>
 
 export type YAxisInfo = Partial<{
     max: number

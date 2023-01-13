@@ -1,12 +1,8 @@
 import {BaseAxis, Chart, YAxisInfo} from "@/types/BaseTypes";
 
-type LineOptionsXAxis = {
-    format: string
-} & BaseAxis
-
 export type LineChartOptions = {
     chart: Chart
-    xAxis?: LineOptionsXAxis
+    xAxis?: BaseAxis
     yAxis?: YAxisInfo
     legend?: boolean
     colors: Array<string>
