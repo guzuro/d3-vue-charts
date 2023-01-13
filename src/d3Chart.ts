@@ -157,11 +157,11 @@ export default class D3Chart extends Vue {
     formatTick(date: any): string {
         const baseFormat = dayjs(date).format("D MMM")
 
-        if (this.chartOptions && this.chartOptions.xAxis && 'format' in this.chartOptions.xAxis) {
-            const format = this.chartOptions.xAxis.format;
+        if (this.chartOptions && this.chartOptions.xAxis) {
+            const format = this.chartOptions.xAxis.formatter;
 
-            if (format) {
-                return dayjs(date).format(format);
+            if (typeof format === "function") {
+                return format(format);
             }
 
             return baseFormat;
