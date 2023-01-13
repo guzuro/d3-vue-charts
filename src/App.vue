@@ -7,7 +7,7 @@
 
         <div style="margin-top: 20px">
             LineChart
-            <LineChart :options="columnOptions" :data="data" />
+            <LineChart :options="lineOptions" :data="data" />
         </div>
     </div>
 </template>
@@ -16,6 +16,8 @@
 import { Component, Vue } from "vue-property-decorator";
 import ColumnChart from "./components/ColumnChart.vue";
 import LineChart from "./components/LineChart.vue";
+import {LineChartOptions} from "@/types/LineOptions";
+import dayjs from "dayjs";
 
 @Component({
     components: {
@@ -88,6 +90,27 @@ export default class App extends Vue {
         ],
         labels: ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
     };
+
+
+    lineOptions:LineChartOptions = {
+        chart: {
+            height: 400,
+            zoom: false,
+        },
+        xAxis: {
+            visible: true,
+            formatter: value => dayjs(value).format("MMM DD"),
+        },
+        yAxis: {
+            visible: true,
+        },
+        legend: true,
+        colors: ["indigo", "blue", "green", "brown"],
+        stroke: {
+            width: 2,
+            dashArray: [0, 7, 0]
+        }
+    }
 
     columnOptionsTwo = {
         chart: {

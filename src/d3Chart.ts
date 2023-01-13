@@ -161,7 +161,7 @@ export default class D3Chart extends Vue {
             const format = this.chartOptions.xAxis.formatter;
 
             if (typeof format === "function") {
-                return format(format);
+                return format(date);
             }
 
             return baseFormat;
