@@ -11,6 +11,7 @@
                 @click="handleInfoClick(info.id)"
             >
                 <div
+                    v-if="showColorTip"
                     class="item__color"
                     :style="{
                         backgroundColor: info.color,
@@ -18,8 +19,13 @@
                     }"
                 />
                 <small class="item__value">
-                    {{ legendItem(info.name, info.value) }}</small
-                >
+                    <template v-if="showName">
+                        {{ legendItem(info.name, info.value) }}
+                    </template>
+                    <template v-else>
+                        {{ formatIfExist(info.value) }}
+                    </template>
+                </small>
             </div>
         </div>
     </div>
@@ -27,7 +33,7 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from "vue-property-decorator";
-import { ChartTooltipItem } from "@/types/BaseTypes";
+import { TooltipOptions, ChartTooltipItem } from "@/types/BaseTypes";
 
 @Component
 export default class extends Vue {
@@ -37,6 +43,8 @@ export default class extends Vue {
 
     @Prop({ type: String, default: "full" }) mode!: "full" | "slim";
 
+    @Prop({ type: Object }) options!: TooltipOptions;
+
     @Emit("infoClick")
     infoClick(id: string) {
         this.updateActiveIds(id);
@@ -45,6 +53,40 @@ export default class extends Vue {
     }
 
     activeIds: Array<string> = [];
+
+    get showColorTip(): boolean {
+        return this.resolveTooltipOptions("colorTip");
+    }
+
+    get showName(): boolean {
+        return this.resolveTooltipOptions("showName");
+    }
+
+    resolveTooltipOptions(
+        key: keyof Omit<TooltipOptions, "formatter" | "visible">
+    ): boolean {
+        if (this?.options?.[key] === undefined) {
+            return true;
+        }
+
+        return (
+            this.options &&
+            this.options[key] !== undefined &&
+            this.options[key] === true
+        );
+    }
+
+    formatIfExist(value: string | number | undefined): string | number {
+        if (value) {
+            if (this.options && typeof this.options.formatter === "function") {
+                return this.options.formatter(value);
+            }
+
+            return value;
+        }
+
+        return "";
+    }
 
     get listStyles(): Record<string, string> {
         if (this.mode === "full") {
@@ -84,7 +126,7 @@ export default class extends Vue {
                 resultString += ": ";
             }
 
-            resultString += value;
+            resultString += this.formatIfExist(value);
         }
 
         return resultString;
