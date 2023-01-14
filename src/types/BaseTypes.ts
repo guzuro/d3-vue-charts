@@ -14,9 +14,11 @@ export type MarginSides = Partial<{
     right: number;
 }>;
 
+export type Formatter = (value: any) => string;
+
 export type BaseAxis = Partial<{
     visible: boolean;
-    formatter: (value: any) => string;
+    formatter: Formatter;
 }>;
 
 export type YAxisInfo = Partial<
@@ -43,5 +45,12 @@ export type ChartTooltipItem = {
     name: string;
     value?: number | string;
 };
+
+export type TooltipOptions = Partial<{
+    visible: boolean;
+    colorTip: boolean;
+    formatter: Formatter;
+    showName: boolean;
+}>;
 
 export type ChartOptions = LineChartOptions | ColumnChartOptions;

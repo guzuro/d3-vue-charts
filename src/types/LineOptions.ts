@@ -1,22 +1,22 @@
-import {BaseAxis, Chart, YAxisInfo} from "@/types/BaseTypes";
+import { BaseAxis, Chart, YAxisInfo, TooltipOptions } from "@/types/BaseTypes";
 
 export type LineChartOptions = {
-    chart: Chart
-    xAxis?: BaseAxis
-    yAxis?: YAxisInfo
-    legend?: boolean
-    colors: Array<string>
-    marker?: ChartMarker
-    stroke?: LineStroke
-}
+    chart: Chart;
+    xAxis?: BaseAxis;
+    yAxis?: YAxisInfo;
+    legend?: TooltipOptions;
+    colors: Array<string>;
+    marker?: ChartMarker;
+    stroke?: LineStroke;
+    tooltip?: TooltipOptions;
+};
 
 export type LineStroke = Partial<{
-    width: number,
-    dashArray: Array<number>
-}>
+    width: number;
+    dashArray: Array<number>;
+}>;
 
 export type ChartMarker = Partial<{
-    line:boolean
-    date: boolean
-    legend:boolean
-}>
+    line: boolean;
+    date: boolean;
+}>;
