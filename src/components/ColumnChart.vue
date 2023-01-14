@@ -28,7 +28,7 @@
 <script lang="ts">
 import D3Chart from "../d3Chart";
 
-import {Component, Mixins, Prop} from "vue-property-decorator";
+import { Component, Mixins, Prop } from "vue-property-decorator";
 import {
     axisBottom,
     axisLeft,
@@ -40,7 +40,7 @@ import {
 } from "d3";
 import ChartTooltip from "./ChartTooltip.vue";
 import formatNumber from "../logic/formatNumber";
-import {ColumnChartOptions} from "@/types/ColumnOptions";
+import { ColumnChartOptions } from "@/types/ColumnOptions";
 
 @Component({
     components: {
@@ -49,7 +49,6 @@ import {ColumnChartOptions} from "@/types/ColumnOptions";
 })
 export default class ColumnChart extends Mixins(D3Chart) {
     @Prop() options!: ColumnChartOptions;
-
 
     xScale = scaleBand();
 
@@ -61,7 +60,10 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
     xAxis: any = null;
 
-    extent: [[number, number], [number, number]] = [[0,0], [0,0]];
+    extent: [[number, number], [number, number]] = [
+        [0, 0],
+        [0, 0],
+    ];
 
     get groups() {
         return this.svg
@@ -113,11 +115,11 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
         if (yAxisOption && yAxisOption.visible) {
             this.yAxis
-                .attr("transform", `translate(${ this.margins.left },0)`)
+                .attr("transform", `translate(${this.margins.left},0)`)
                 .call(
-                    axisLeft(this.yScale)
-                        .tickFormat((d) =>
-                            this.formatterYaxis(formatNumber(d)))
+                    axisLeft(this.yScale).tickFormat((d) =>
+                        this.formatterYaxis(formatNumber(d))
+                    )
                 );
         }
 
@@ -125,7 +127,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
             this.xAxis
                 .attr(
                     "transform",
-                    `translate(0,${ this.size.height - this.margins.bottom })`
+                    `translate(0,${this.size.height - this.margins.bottom})`
                 )
                 .call(
                     axisBottom(this.xScale)
@@ -135,24 +137,24 @@ export default class ColumnChart extends Mixins(D3Chart) {
         }
     }
 
-    formatterXaxis(d:string):any {
-        const xAxisInfo = this.options.xAxis
+    formatterXaxis(d: string): any {
+        const xAxisInfo = this.options.xAxis;
 
-        if (xAxisInfo && typeof xAxisInfo.formatter === 'function') {
-            return xAxisInfo.formatter(d)
+        if (xAxisInfo && typeof xAxisInfo.formatter === "function") {
+            return xAxisInfo.formatter(d);
         }
 
-        return d
+        return d;
     }
 
-    formatterYaxis(d:string):any {
-        const yAxisInfo = this.options.yAxis
+    formatterYaxis(d: string): any {
+        const yAxisInfo = this.options.yAxis;
 
-        if (yAxisInfo && typeof yAxisInfo.formatter === 'function') {
-            return yAxisInfo.formatter(d)
+        if (yAxisInfo && typeof yAxisInfo.formatter === "function") {
+            return yAxisInfo.formatter(d);
         }
 
-        return d
+        return d;
     }
 
     setScales(): void {
@@ -190,22 +192,25 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .enter()
             .append("g")
             .attr("class", "column-chart__group")
-            .attr("transform", (d:string) => `translate(${this.xScale(d)}, 0)`);
+            .attr(
+                "transform",
+                (d: string) => `translate(${this.xScale(d)}, 0)`
+            );
 
         transformedGroups
             .selectAll(".column-chart__bar")
-            .data((d:string) => this.chartData.filter((r) => r.label === d))
+            .data((d: string) => this.chartData.filter((r) => r.label === d))
             .enter()
             .append("rect")
             .attr("class", "column-chart__bar")
-            .attr("x", (d:any) => this.xScaleBars(d.name))
+            .attr("x", (d: any) => this.xScaleBars(d.name))
             .attr("fill", this.barFillColor)
-            .attr("y", (d:any) => this.yScale(d.value))
+            .attr("y", (d: any) => this.yScale(d.value))
             .attr("width", this.xScaleBars.bandwidth())
-            .attr("id", (d:any) => d.id)
+            .attr("id", (d: any) => d.id)
             .attr(
                 "height",
-                (d:any) =>
+                (d: any) =>
                     this.size.height -
                     this.margins.bottom -
                     +this.yScale(d.value)
@@ -219,7 +224,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
         return this.options.tooltip ?? true;
     }
 
-    mouseover(_: MouseEvent, d:any) {
+    mouseover(_: MouseEvent, d: any) {
         const tooltip = new ChartTooltip({
             propsData: {
                 header: d.label,
@@ -236,12 +241,11 @@ export default class ColumnChart extends Mixins(D3Chart) {
         }
     }
     get container() {
-        return select(`.column-chart-${ this.GUID }`);
+        return select(`.column-chart-${this.GUID}`);
     }
 
-
     mousemove(e: MouseEvent) {
-        const [ x, y ] = pointer(e, this.svg.node());
+        const [x, y] = pointer(e, this.svg.node());
 
         let leftPosition = x;
 
@@ -249,7 +253,9 @@ export default class ColumnChart extends Mixins(D3Chart) {
             this.columnTooltip.node() as HTMLElement
         ).getBoundingClientRect();
 
-        const { width: cWidth, } = (this.container.node() as HTMLElement).getBoundingClientRect()
+        const { width: cWidth } = (
+            this.container.node() as HTMLElement
+        ).getBoundingClientRect();
 
         if (x + width > cWidth) {
             leftPosition = x - width;
@@ -333,7 +339,11 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     mounted(): void {
-        this.initData(this.$refs.columnChart as Element, "column", this.options);
+        this.initData(
+            this.$refs.columnChart as Element,
+            "column",
+            this.options
+        );
         this.setSizes();
 
         this.setSvgViewBox();

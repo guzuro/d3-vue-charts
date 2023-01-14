@@ -36,12 +36,12 @@ import { axisLeft, axisBottom } from "d3-axis";
 import { scaleLinear, scaleTime } from "d3-scale";
 import { zoom } from "d3-zoom";
 
-import {Component, Emit, Mixins, Prop} from "vue-property-decorator";
+import { Component, Emit, Mixins, Prop } from "vue-property-decorator";
 import D3Chart from "../d3Chart";
 import formatNumber from "../logic/formatNumber";
 import ChartTooltip from "@/components/ChartTooltip.vue";
-import {pointer, select} from "d3";
-import {LineChartOptions} from "@/types/LineOptions";
+import { pointer, select } from "d3";
+import { LineChartOptions } from "@/types/LineOptions";
 
 @Component({
     components: {
@@ -119,13 +119,12 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     get zoom() {
-            return zoom()
-                .scaleExtent([1, 3])
-                .translateExtent(this.extent)
-                .extent(this.extent)
-                .on("zoom", this.zoomed)
-                .on("zoom.mousedown", this.onMouseleave);
-
+        return zoom()
+            .scaleExtent([1, 3])
+            .translateExtent(this.extent)
+            .extent(this.extent)
+            .on("zoom", this.zoomed)
+            .on("zoom.mousedown", this.onMouseleave);
     }
 
     setScales(): void {
@@ -232,31 +231,31 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .attr("d", (d) => this.line(d.value))
             .attr("stroke", (d) => d.value[0].color)
             .attr("stroke-width", this.lineStrokeWidth)
-            .attr('stroke-dasharray', this.lineStrokeDashArray)
+            .attr("stroke-dasharray", this.lineStrokeDashArray)
             .attr("class", "path")
-            .style('fill', 'none')
+            .style("fill", "none");
 
         this.setDots();
     }
 
-    lineStrokeDashArray(_:any, index:number):number {
-        const stroke = this.options.stroke
+    lineStrokeDashArray(_: any, index: number): number {
+        const stroke = this.options.stroke;
 
         if (stroke && stroke.dashArray && stroke.dashArray[index]) {
-            return stroke.dashArray[index]
+            return stroke.dashArray[index];
         }
 
-        return 0
+        return 0;
     }
 
-    lineStrokeWidth():number {
-        const stroke = this.options.stroke
+    lineStrokeWidth(): number {
+        const stroke = this.options.stroke;
 
         if (stroke && stroke.width && stroke.width > 0) {
-            return stroke.width
+            return stroke.width;
         }
 
-        return 2
+        return 2;
     }
 
     setDots(): void {
@@ -268,7 +267,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .data(this.data.series)
             .enter()
             .append("circle")
-            .attr("class", "chart_circle")
+            .attr("class", "chart_circle");
     }
 
     onResize(): void {
@@ -326,10 +325,10 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     onMousemove(e: MouseEvent): void {
-        const [ posX, _ ] = pointer(e)
+        const [posX, _] = pointer(e);
         const label = this.xScale.invert(posX);
 
-        const optionsMarker = this.options.marker
+        const optionsMarker = this.options.marker;
 
         const nearestIndex = this.bisect.center(this.chartData, label);
         const nearestIndexData = this.chartData[nearestIndex];
@@ -337,12 +336,14 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         const x = this.xScaleValue(nearestIndexData);
         this.updateSelectedValues(nearestIndexData);
 
-        const items = this.chartData.filter(cd => cd.label === nearestIndexData.label)
+        const items = this.chartData.filter(
+            (cd) => cd.label === nearestIndexData.label
+        );
 
         this.svg
-            .selectAll('circle')
+            .selectAll("circle")
             .data(items)
-            .attr("r", (d) => d.value !== null ? 3 : 0)
+            .attr("r", (d) => (d.value !== null ? 3 : 0))
             .attr("cx", this.xScaleValue)
             .attr("cy", (d) => this.yScale(d.value))
             .attr("fill", (d) => d.color);
@@ -367,9 +368,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         this.markerLine.style("opacity", 0);
         this.markerLegend.style("opacity", 0);
 
-        this.svg
-            .selectAll('circle')
-            .attr("r", 0)
+        this.svg.selectAll("circle").attr("r", 0);
     }
 
     mounted(): void {
@@ -410,7 +409,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
         this.svg
             .on("mousemove", this.onMousemove)
-            .on("mouseleave", this.onMouseleave)
+            .on("mouseleave", this.onMouseleave);
 
         window.addEventListener("resize", this.onResize);
     }

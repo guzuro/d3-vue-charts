@@ -27,7 +27,7 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from "vue-property-decorator";
-import {ChartTooltipItem} from "@/types/BaseTypes";
+import { ChartTooltipItem } from "@/types/BaseTypes";
 
 @Component
 export default class extends Vue {
@@ -38,13 +38,13 @@ export default class extends Vue {
     @Prop({ type: String, default: "full" }) mode!: "full" | "slim";
 
     @Emit("infoClick")
-    infoClick(id: number) {
+    infoClick(id: string) {
         this.updateActiveIds(id);
 
         return id;
     }
 
-    activeIds: number[] = [];
+    activeIds: Array<string> = [];
 
     get listStyles(): Record<string, string> {
         if (this.mode === "full") {
@@ -60,13 +60,13 @@ export default class extends Vue {
         }
     }
 
-    handleInfoClick(id: number): void {
+    handleInfoClick(id: string): void {
         if (this.infos.length > 1) {
             this.infoClick(id);
         }
     }
 
-    updateActiveIds(id: number): void {
+    updateActiveIds(id: string): void {
         const activeItemIndex = this.activeIds.indexOf(id);
 
         if (activeItemIndex !== -1) {
@@ -76,7 +76,7 @@ export default class extends Vue {
         }
     }
 
-    legendItem(name: string, value: string | undefined): string {
+    legendItem(name: string, value: string | number | undefined): string {
         let resultString = `${this.sliceName(name)}`;
 
         if (value) {
