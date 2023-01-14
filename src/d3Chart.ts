@@ -5,7 +5,7 @@ import { Prop } from "vue-property-decorator";
 import mapData from "./logic/mapData";
 import dayjs from "dayjs";
 import { Guid } from "guid-typescript";
-import { ColumnChartOptions } from "@/types/ColumnOptions";
+
 import {
     ChartData,
     ChartDataWithId,

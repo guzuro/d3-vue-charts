@@ -20,7 +20,7 @@
             />
         </div>
         <chart-tooltip
-            v-if="options.legend"
+            v-if="options.legend?.visible"
             key="legend"
             class="large-legend"
             :infos="selectedInfos.values"
@@ -329,6 +329,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         const label = this.xScale.invert(posX);
 
         const optionsMarker = this.options.marker;
+        const tooltip = this.options.tooltip;
 
         const nearestIndex = this.bisect.center(this.chartData, label);
         const nearestIndexData = this.chartData[nearestIndex];
@@ -356,10 +357,10 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             if (optionsMarker?.date ?? true) {
                 this.updateMarkerDate(nearestIndexData.label, x);
             }
+        }
 
-            if (optionsMarker?.legend ?? true) {
-                this.updateMarkerLegend(nearestIndex, x);
-            }
+        if ((tooltip && tooltip?.visible) ?? true) {
+            this.updateMarkerLegend(nearestIndex, x);
         }
     }
 

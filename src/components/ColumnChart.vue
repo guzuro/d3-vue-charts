@@ -18,8 +18,9 @@
             />
         </div>
         <chart-tooltip
-            v-if="options.legend"
+            v-if="options.legend?.visible"
             :infos="mappedLegend"
+            :options="options.legend"
             @infoClick="toggleSelectedLegendName"
         />
     </div>
@@ -221,7 +222,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     get tooltipEnabled(): boolean {
-        return this.options.tooltip ?? true;
+        return (this.options.tooltip && this.options.tooltip.visible) ?? true;
     }
 
     mouseover(_: MouseEvent, d: any) {
@@ -230,6 +231,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
                 header: d.label,
                 infos: [{ ...d }],
                 mode: "slim",
+                options: this.options.tooltip,
             },
         }).$mount();
 
