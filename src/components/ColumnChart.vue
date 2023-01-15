@@ -83,7 +83,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
     get zoom() {
         if (this.options.chart.zoom) {
             return zoom()
-                .scaleExtent([1, 3])
+                .scaleExtent([1, 100 / this.xScale.bandwidth()])
                 .translateExtent(this.extent)
                 .extent(this.extent)
                 .on("zoom", this.zoomed);
@@ -369,6 +369,10 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .on("touchend.zoom", null)
             .on("touchcancel.zoom", null)
             .on("dblclick.zoom", null);
+
+        if (this.options.chart.zoom && this.data.labels.length > 35) {
+            this.svg.call(this.zoom!.scaleBy, 100 / this.xScale.bandwidth());
+        }
 
         window.addEventListener("resize", this.onResize);
     }
