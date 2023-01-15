@@ -16,8 +16,9 @@
 import { Component, Vue } from "vue-property-decorator";
 import ColumnChart from "./components/ColumnChart.vue";
 import LineChart from "./components/LineChart.vue";
-import {LineChartOptions} from "@/types/LineOptions";
+import { LineChartOptions } from "@/types/LineOptions";
 import dayjs from "dayjs";
+import { ColumnChartOptions } from "./types/ColumnOptions";
 
 @Component({
     components: {
@@ -91,26 +92,27 @@ export default class App extends Vue {
         labels: ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
     };
 
-
-    lineOptions:LineChartOptions = {
+    lineOptions: LineChartOptions = {
         chart: {
             height: 400,
             zoom: false,
         },
         xAxis: {
             visible: true,
-            formatter: value => dayjs(value).format("MMM DD"),
+            formatter: (value) => dayjs(value).format("MMM DD"),
         },
         yAxis: {
             visible: true,
         },
-        legend: true,
+        legend: {
+            visible: true,
+        },
         colors: ["indigo", "blue", "green", "brown"],
         stroke: {
             width: 2,
-            dashArray: [0, 7, 0]
-        }
-    }
+            dashArray: [0, 7, 0],
+        },
+    };
 
     columnOptionsTwo = {
         chart: {
@@ -131,30 +133,35 @@ export default class App extends Vue {
                 ...this.dataTwo.labels.slice(-1),
                 ...this.dataTwo.labels.slice(-2),
             ],
-            color: "red",
+            color: "gray",
         },
     };
 
-    columnOptions = {
+    columnOptions: ColumnChartOptions = {
         chart: {
             height: 400,
             zoom: true,
         },
         xAxis: {
             visible: true,
-            format: "MMM DD",
         },
         yAxis: {
             visible: true,
         },
-        legend: true,
+        tooltip: {
+            colorTip: false,
+            formatter: (value) => value + " %",
+        },
+        legend: {
+            visible: true,
+        },
         colors: ["indigo", "blue", "green", "brown"],
         highlight: {
             keys: [
                 ...this.data.labels.slice(-1),
                 ...this.data.labels.slice(-2),
             ],
-            color: "red",
+            color: "gray",
         },
     };
 }
