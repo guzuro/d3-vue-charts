@@ -92,12 +92,11 @@ export default class extends Vue {
         if (this.mode === "full") {
             return {
                 gap: "5px",
-                "flex-direction": "row",
+                "grid-template-columns": "repeat(auto-fit, minmax(300px, 1fr))",
             };
         } else {
             return {
                 gap: "2px",
-                "flex-direction": "column",
             };
         }
     }
@@ -157,9 +156,10 @@ export default class extends Vue {
 }
 
 .list {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
+    // display: flex;
+    // flex-wrap: wrap;
+    // justify-content: space-around;
+    display: grid;
 
     &__item {
         padding: 2px;
