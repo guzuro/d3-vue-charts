@@ -18,7 +18,7 @@
             />
         </div>
         <chart-tooltip
-            v-if="options.legend?.visible"
+            v-if="options.legend && options.legend.visible"
             :infos="mappedLegend"
             :options="options.legend"
             @infoClick="toggleSelectedLegendName"
