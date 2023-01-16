@@ -12,7 +12,7 @@
             }"
         >
             <chart-tooltip
-                class="marker-legend"
+                :class="`marker-legend marker-legend-${GUID}`"
                 key="marker-legend"
                 :infos="selectedInfos.values"
                 :header="selectedInfos.header"
@@ -20,10 +20,11 @@
             />
         </div>
         <chart-tooltip
-            v-if="options.legend?.visible"
+            v-if="options.legend && options.legend.visible"
             key="legend"
             class="large-legend"
             :infos="selectedInfos.values"
+            :options="options.legend"
             @infoClick="toggleSelectedLegendName"
         />
     </div>
@@ -286,7 +287,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     get markerLegend() {
-        return select(".marker-legend");
+        return select(`.marker-legend-${ this.GUID }`);
     }
 
     updateMarkerDate(dateLabel: string, positionX: number): void {
@@ -370,6 +371,16 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         this.markerLegend.style("opacity", 0);
 
         this.svg.selectAll("circle").attr("r", 0);
+
+        this.setEmptyLegendValues()
+    }
+
+    setEmptyLegendValues():void {
+        this.selectedInfos.values = this.data.series.map((s, i) => ({
+            name: s.name,
+            color: this.options.colors[i],
+            value: "-",
+        }));
     }
 
     mounted(): void {
@@ -392,11 +403,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             ],
         ];
 
-        this.selectedInfos.values = this.data.series.map((s, i) => ({
-            name: s.name,
-            color: this.options.colors[i],
-            value: "-",
-        }));
+        this.setEmptyLegendValues()
 
         if (this.options.chart.zoom) {
             this.svg
