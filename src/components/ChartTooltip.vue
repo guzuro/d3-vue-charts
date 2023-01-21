@@ -156,9 +156,6 @@ export default class extends Vue {
 }
 
 .list {
-    // display: flex;
-    // flex-wrap: wrap;
-    // justify-content: space-around;
     display: grid;
 
     &__item {
