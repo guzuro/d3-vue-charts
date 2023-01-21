@@ -12,10 +12,16 @@
                 height: `${containerHeight}px`,
             }"
         >
-            <div
+            <chart-tooltip
                 v-if="tooltipEnabled"
                 :class="`column-chart__tooltip column-chart__tooltip-${GUID}`"
+                :infos="hoverableBarInfo.value"
+                :header="hoverableBarInfo.header"
+                :options="options.tooltip"
+                mode="slim"
             />
+
+            <div />
         </div>
         <chart-tooltip
             v-if="options.legend && options.legend.visible"
@@ -42,6 +48,7 @@ import {
 import ChartTooltip from "./ChartTooltip.vue";
 import formatNumber from "../logic/formatNumber";
 import { ColumnChartOptions } from "@/types/ColumnOptions";
+import { ChartTooltipItem } from "../types/BaseTypes";
 
 @Component({
     components: {
@@ -65,6 +72,9 @@ export default class ColumnChart extends Mixins(D3Chart) {
         [0, 0],
         [0, 0],
     ];
+
+    hoverableBarInfo: { header: string; value: Array<ChartTooltipItem> } =
+        {} as { header: string; value: Array<ChartTooltipItem> };
 
     get groups() {
         return this.svg
@@ -96,6 +106,14 @@ export default class ColumnChart extends Mixins(D3Chart) {
         return select(`.column-chart__tooltip-${this.GUID}`);
     }
 
+    get tooltipEnabled(): boolean {
+        return (this.options.tooltip && this.options.tooltip.visible) ?? true;
+    }
+
+    get container() {
+        return select(`.column-chart-${this.GUID}`);
+    }
+
     setChartAxis(): void {
         const axisGroup = this.svg
             .append("g")
@@ -109,10 +127,6 @@ export default class ColumnChart extends Mixins(D3Chart) {
     setAxis(): void {
         const xAxisOption = this.options.xAxis;
         const yAxisOption = this.options.yAxis;
-        //todo
-        const evenLabels = this.data.labels.filter((d, i, arr) =>
-            arr.length > 15 ? i % 2 === 0 : true
-        );
 
         if (yAxisOption && yAxisOption.visible) {
             this.yAxis
@@ -132,7 +146,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
                 )
                 .call(
                     axisBottom(this.xScale)
-                        .tickValues(this.labelsByWidth(evenLabels))
+                        .tickValues(this.data.labels)
                         .tickFormat(this.formatterXaxis)
                 );
         }
@@ -221,29 +235,17 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .on("mouseleave", this.mouseleave);
     }
 
-    get tooltipEnabled(): boolean {
-        return (this.options.tooltip && this.options.tooltip.visible) ?? true;
-    }
-
     mouseover(_: MouseEvent, d: any) {
-        const tooltip = new ChartTooltip({
-            propsData: {
-                header: d.label,
-                infos: [{ ...d }],
-                mode: "slim",
-                options: this.options.tooltip,
-            },
-        }).$mount();
+        this.hoverableBarInfo = {
+            header: d.label,
+            value: [{ ...d }],
+        };
 
         if (this.tooltipEnabled) {
             this.columnTooltip
-                .html(tooltip.$el.outerHTML)
                 .style("opacity", 1)
                 .style("pointer-events", "none");
         }
-    }
-    get container() {
-        return select(`.column-chart-${this.GUID}`);
     }
 
     mousemove(e: MouseEvent) {
@@ -325,19 +327,6 @@ export default class ColumnChart extends Mixins(D3Chart) {
             .selectAll(".column-chart__bar")
             .attr("x", (d: any) => this.xScaleBars(d.name))
             .attr("width", this.xScaleBars.bandwidth());
-
-        if (e.transform.k > 1.5) {
-            this.svg.select(".chart-axis-group-x").call(this.setAxis);
-            this.xAxis.call(
-                axisBottom(this.xScale).tickValues(this.data.labels)
-            );
-        } else {
-            this.xAxis.call(
-                axisBottom(this.xScale).tickValues(
-                    this.labelsByWidth(this.data.labels)
-                )
-            );
-        }
     }
 
     mounted(): void {
