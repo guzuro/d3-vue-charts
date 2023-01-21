@@ -32,12 +32,12 @@
 
 <script lang="ts">
 import { curveMonotoneX, line } from "d3-shape";
-import { bisector, extent as d3Extent, group } from "d3-array";
+import { bisect, bisector, group, range } from "d3-array";
 import { axisLeft, axisBottom } from "d3-axis";
-import { scaleLinear, scaleTime } from "d3-scale";
+import { scaleLinear, scalePoint } from "d3-scale";
 import { zoom } from "d3-zoom";
 
-import { Component, Emit, Mixins, Prop } from "vue-property-decorator";
+import { Component, Mixins, Prop } from "vue-property-decorator";
 import D3Chart from "../d3Chart";
 import formatNumber from "../logic/formatNumber";
 import ChartTooltip from "@/components/ChartTooltip.vue";
@@ -52,17 +52,7 @@ import { LineChartOptions } from "@/types/LineOptions";
 export default class extends Mixins<D3Chart>(D3Chart) {
     @Prop() options!: LineChartOptions;
 
-    @Emit("onMove")
-    selectedLabel(data: Array<any>): Array<any> {
-        return data.map((d) => ({
-            name: d.name,
-            value: d.value,
-        }));
-    }
-
-    xScale = scaleTime();
-
-    xScaleValue = (d) => this.xScale(new Date(d.label));
+    xScale = scalePoint();
 
     yScale = scaleLinear();
 
@@ -74,7 +64,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
     line = line<any>()
         .defined((d: any) => d.value !== null)
-        .x(this.xScaleValue)
+        .x((d) => this.xScale(d.label)!)
         .y((d) => this.yScale(d.value))
         .curve(curveMonotoneX);
 
@@ -88,7 +78,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     get bisect() {
-        return bisector((d: any) => new Date(d.label));
+        return bisector((d: any) => d.label);
     }
 
     get markerLine(): any {
@@ -130,7 +120,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
     setScales(): void {
         this.xScale
-            .domain(d3Extent(this.dateLabels) as any)
+            .domain(this.data.labels)
             .range([this.margins.left, this.size.width - this.margins.right]);
 
         this.yScale
@@ -159,19 +149,11 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
         this.svg
             .selectAll("circle")
-            .attr("cx", this.xScaleValue)
+            .attr("cx", (d) => this.xScale(d.label))
             .attr("cy", (d) => this.yScale(d.value));
 
         this.svg.selectAll(".path").attr("d", (d) => this.line(d.value));
-
-        if (e.transform.k > 1.5) {
-            this.svg.select(".chart-axis-group-x").call(this.setAxis);
-            this.xAxis.call(this.bottomAxis.tickValues(this.dateLabels));
-        } else {
-            this.xAxis.call(
-                this.bottomAxis.tickValues(this.labelsByWidth(this.dateLabels))
-            );
-        }
+        this.xAxis.call(this.bottomAxis.tickValues(this.data.labels));
     }
 
     setChartAxis(): void {
@@ -188,10 +170,6 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         const xAxisOption = this.options.xAxis;
         const yAxisOption = this.options.yAxis;
 
-        const evenLabels = this.dateLabels.filter((d, i, arr) =>
-            arr.length > 15 ? i % 2 === 0 : true
-        );
-
         if (yAxisOption && yAxisOption.visible) {
             this.yAxis
                 .attr("transform", `translate(${this.margins.left},0)`)
@@ -206,9 +184,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
                     "transform",
                     `translate(0,${this.size.height - this.margins.bottom})`
                 )
-                .call(
-                    this.bottomAxis.tickValues(this.labelsByWidth(evenLabels))
-                );
+                .call(this.bottomAxis);
         }
     }
 
@@ -282,12 +258,12 @@ export default class extends Mixins<D3Chart>(D3Chart) {
         this.svg
             .selectAll("circle")
             .attr("r", (d) => (d.value !== null ? 2 : 0))
-            .attr("cx", this.xScaleValue)
+            .attr("cx", (d) => this.xScale(d.label))
             .attr("cy", (d) => this.yScale(d.value));
     }
 
     get markerLegend() {
-        return select(`.marker-legend-${ this.GUID }`);
+        return select(`.marker-legend-${this.GUID}`);
     }
 
     updateMarkerDate(dateLabel: string, positionX: number): void {
@@ -319,49 +295,58 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     updateSelectedValues(data): void {
-        this.$set(this.selectedInfos, "header", this.formatTick(data.label));
-        this.selectedInfos.values = this.chartData.filter(
-            (cd) => cd.label === data.label
+        this.$set(this.selectedInfos, "header", this.formatTick(data[0].label));
+        this.selectedInfos.values = data;
+    }
+
+    getCurrentDomainIndex(posX: number): number {
+        const scaleRange = this.xScale.range();
+        const rangeSeq = range(
+            scaleRange[0],
+            scaleRange[1],
+            this.xScale.step()
         );
+
+        return bisect(rangeSeq, posX);
     }
 
     onMousemove(e: MouseEvent): void {
         const [posX, _] = pointer(e);
-        const label = this.xScale.invert(posX);
+        const currDomainIndex = this.getCurrentDomainIndex(posX);
 
         const optionsMarker = this.options.marker;
         const tooltip = this.options.tooltip;
 
-        const nearestIndex = this.bisect.center(this.chartData, label);
-        const nearestIndexData = this.chartData[nearestIndex];
+        const label = this.xScale.domain()[currDomainIndex];
 
-        const x = this.xScaleValue(nearestIndexData);
-        this.updateSelectedValues(nearestIndexData);
+        const labelXScale = this.xScale(label);
+        const items = this.chartData.filter((cd) => cd.label === label);
 
-        const items = this.chartData.filter(
-            (cd) => cd.label === nearestIndexData.label
-        );
+        this.updateSelectedValues(items);
 
         this.svg
             .selectAll("circle")
             .data(items)
             .attr("r", (d) => (d.value !== null ? 3 : 0))
-            .attr("cx", this.xScaleValue)
+            .attr("cx", (d) => this.xScale(d.label))
             .attr("cy", (d) => this.yScale(d.value))
             .attr("fill", (d) => d.color);
 
         if (optionsMarker ?? true) {
             if (optionsMarker?.line ?? true) {
-                this.markerLine.style("opacity", 1).attr("x1", x).attr("x2", x);
+                this.markerLine
+                    .style("opacity", 1)
+                    .attr("x1", labelXScale)
+                    .attr("x2", labelXScale);
             }
 
             if (optionsMarker?.date ?? true) {
-                this.updateMarkerDate(nearestIndexData.label, x);
+                this.updateMarkerDate(label, labelXScale!);
             }
         }
 
         if ((tooltip && tooltip?.visible) ?? true) {
-            this.updateMarkerLegend(nearestIndex, x);
+            this.updateMarkerLegend(currDomainIndex, labelXScale!);
         }
     }
 
@@ -372,10 +357,10 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
         this.svg.selectAll("circle").attr("r", 0);
 
-        this.setEmptyLegendValues()
+        this.setEmptyLegendValues();
     }
 
-    setEmptyLegendValues():void {
+    setEmptyLegendValues(): void {
         this.selectedInfos.values = this.data.series.map((s, i) => ({
             name: s.name,
             color: this.options.colors[i],
@@ -403,7 +388,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             ],
         ];
 
-        this.setEmptyLegendValues()
+        this.setEmptyLegendValues();
 
         if (this.options.chart.zoom) {
             this.svg
