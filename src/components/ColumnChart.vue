@@ -296,6 +296,8 @@ export default class ColumnChart extends Mixins(D3Chart) {
                     this.margins.bottom -
                     +this.yScale(d.value)
             );
+
+        this.updateClipPath();
     }
 
     zoomIn() {

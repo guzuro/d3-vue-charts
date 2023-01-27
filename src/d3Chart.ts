@@ -144,6 +144,7 @@ export default class D3Chart extends Vue {
         this.setChartDom(chartType);
         this.initialiseMargins();
         this.setDefaultClipPath();
+        this.setSvgViewBox();
     }
 
     setChartDom(chartType: string): void {
@@ -190,18 +191,6 @@ export default class D3Chart extends Vue {
         }
     }
 
-    labelsByWidth(labels: Array<any>): Array<any> {
-        if (this.size.width < 576) {
-            return labels.filter((l, i) => i % 3 === 0);
-        }
-
-        if (this.size.width < 992) {
-            return labels.filter((l, i) => i % 2 === 0);
-        }
-
-        return labels;
-    }
-
     setDefaultClipPath() {
         this.svg
             .append("defs")
@@ -212,6 +201,15 @@ export default class D3Chart extends Vue {
             .attr("height", this.size.height)
             .attr("x", this.margins.left)
             .attr("y", 0);
+    }
+
+    updateClipPath(): void {
+        this.$nextTick(() => {
+            this.svg
+                .select(`[id='${this.GUID}'] rect`)
+                .attr("width", this.size.width - this.margins.right)
+                .attr("height", this.size.height);
+        });
     }
 
     setSizes(): void {

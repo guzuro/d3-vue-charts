@@ -196,7 +196,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
         const lines = this.svg
             .append("g")
-            .attr("clip-path", "url(#clip)")
+            .attr("clip-path", `url(#${this.GUID})`)
             .selectAll("lines")
             .data(groupes)
             .enter()
@@ -238,7 +238,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     setDots(): void {
         this.svg
             .append("g")
-            .attr("clip-path", "url(#clip)")
+            .attr("clip-path", `url(#${this.GUID})`)
             .selectAll("circle")
             .append("g")
             .data(this.data.series)
@@ -260,6 +260,8 @@ export default class extends Mixins<D3Chart>(D3Chart) {
             .attr("r", (d) => (d.value !== null ? 2 : 0))
             .attr("cx", (d) => this.xScale(d.label))
             .attr("cy", (d) => this.yScale(d.value));
+
+        this.updateClipPath();
     }
 
     get markerLegend() {
@@ -370,9 +372,7 @@ export default class extends Mixins<D3Chart>(D3Chart) {
 
     mounted(): void {
         this.initData(this.$refs.lineChart as Element, "line", this.options);
-        this.setSizes();
 
-        this.setSvgViewBox();
         this.setChartAxis();
 
         this.setScales();
