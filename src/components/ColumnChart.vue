@@ -173,6 +173,8 @@ export default class ColumnChart extends Mixins(D3Chart) {
     }
 
     setScales(): void {
+        const ZERO_ON_MIDDLE_AXIS_GUARD = 1
+
         this.xScale
             .range([this.margins.left, this.size.width - this.margins.right])
             .paddingInner(0.1)
@@ -180,7 +182,7 @@ export default class ColumnChart extends Mixins(D3Chart) {
 
         this.yScale
             .range([this.margins.top, this.size.height - this.margins.bottom])
-            .domain([this.maxValue, 0]);
+            .domain([this.maxValue + ZERO_ON_MIDDLE_AXIS_GUARD, 0]);
 
         this.xScaleBars
             .domain(this.seriesGroups)
