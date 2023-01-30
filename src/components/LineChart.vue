@@ -119,13 +119,15 @@ export default class extends Mixins<D3Chart>(D3Chart) {
     }
 
     setScales(): void {
+        const ZERO_ON_MIDDLE_AXIS_GUARD = 1
+
         this.xScale
             .domain(this.data.labels)
             .range([this.margins.left, this.size.width - this.margins.right]);
 
         this.yScale
             .range([this.margins.top, this.size.height - this.margins.bottom])
-            .domain([this.maxValue, 0]);
+            .domain([ this.maxValue + ZERO_ON_MIDDLE_AXIS_GUARD, 0 ]);
     }
 
     zoomIn() {
